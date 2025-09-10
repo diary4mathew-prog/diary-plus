@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Diary+</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#3b82f6">
+
 <style>
   :root{ --bg:#f4f6f8; --fg:#101216; --muted:#6b7380; --card:#ffffff;
          --accent:#3b82f6; --accent-weak:#e6efff; --danger:#ef4444; --radius:16px; }
@@ -182,6 +185,13 @@ q.addEventListener("input", render);
 
 /* First render */
 render();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(err => console.warn("SW failed", err));
+    });
+  }
 </script>
 </body>
 </html>
