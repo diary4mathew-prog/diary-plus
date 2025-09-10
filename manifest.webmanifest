@@ -1,0 +1,9 @@
+{
+  "name": "Diary+",
+  "short_name": "Diary+",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#3b82f6"
+}
