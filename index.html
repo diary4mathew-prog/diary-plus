@@ -1,197 +1,926 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Diary+</title>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#3b82f6">
+  <meta charset="utf-8" />
+  <title>Customer Tasks (Manual Only)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0b1020; --panel:#121a35; --panel2:#0f1530; --text:#eaf0ff; --muted:#aab4d6;
+      --border:#1f2a4f; --accent:#5b8cff; --accent2:#74d680; --warn:#ffcc66; --danger:#ff6b6b; --mark:#fff2a8;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:linear-gradient(180deg,#0a0f1f 0%, #0e1430 100%); color:var(--text)}
+    header{position:sticky; top:0; z-index:10; padding:16px; border-bottom:1px solid var(--border); background:rgba(13,18,40,.7); backdrop-filter:blur(6px) saturate(140%)}
+    .container{max-width:1100px; margin:18px auto; padding:0 14px}
+    h1{margin:0; font-size:20px}
+    .sub{margin-top:4px; color:var(--muted); font-size:13px}
+    .toolbar{margin-top:12px; display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    input[type="text"], input[type="date"], textarea, select{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#0b1433; color:#eaf0ff; outline:none;
+    }
+    .btn{appearance:none; border:none; border-radius:10px; padding:9px 13px; color:#fff; font-weight:600; cursor:pointer; transition:.15s transform ease, .2s background ease}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:linear-gradient(180deg, var(--accent) 0%, #3f69ff 100%)}
+    .btn.secondary{background:#1a2446; border:1px solid var(--border); color:#dfe7ff}
+    .btn.ok{background:linear-gradient(180deg, var(--accent2) 0%, #3fbf74 100%)}
+    .btn.warn{background:linear-gradient(180deg, var(--warn) 0%, #f5b24e 100%); color:#2a1b05}
+    .btn.danger{background:linear-gradient(180deg, var(--danger) 0%, #ff5252 100%)}
+    .btn.sm{padding:6px 10px; font-size:12px}
+    .tabs{display:flex; gap:8px; margin-top:14px}
+    .tab{padding:8px 12px; border-radius:10px; background:#121a35; border:1px solid var(--border); color:#cdd7ff; cursor:pointer; font-weight:700}
+    .tab.active{background:#1b2552}
+    .card{background:linear-gradient(180deg,var(--panel) 0%, var(--panel2) 100%); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .filters{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
+    .chip{padding:7px 12px; background:#121a35; border:1px solid var(--border); border-radius:999px; color:#cfe1ff; font-weight:700; cursor:pointer; font-size:12px; user-select:none}
+    .chip.active{background:#1b2552}
+    .more{position:relative}
+    .dropdown{position:absolute; top:36px; left:0; background:#0e1430; border:1px solid var(--border); border-radius:12px; display:none; min-width:220px; z-index:5}
+    .dropdown button{display:block; width:100%; text-align:left; padding:8px 12px; background:transparent; border:none; color:#dbe4ff; cursor:pointer}
+    .dropdown button:hover{background:#16204a}
+    .list{margin-top:10px; border:1px solid var(--border); border-radius:12px; overflow:hidden}
+    .row{display:flex; gap:12px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border)}
+    .row:last-child{border-bottom:none}
+    .row .meta{flex:1}
+    .muted{color:var(--muted); font-size:12px}
+    .pill{display:inline-block; padding:3px 8px; border-radius:999px; font-size:12px; font-weight:800}
+    .p-pending{background:#20305f; color:#7fb1ff}
+    .p-inprog{background:#4a2b05; color:#ffb067}
+    .p-onhold{background:#2e1f44; color:#c79bff}
+    .p-cancel{background:#313842; color:#9bb0c4}
+    .p-due{background:#372a12; color:#ffd27e}
+    .p-overdue{background:#3a1212; color:#ff9a9a}
+    .p-complete{background:#173726; color:#87e2a5}
+    .hidden{display:none}
+    .hr{height:1px; background:var(--border); margin:12px 0}
+    .inline{display:flex; gap:8px; align-items:center}
+    .wrap{flex-wrap:wrap}
+    .grow{flex:1}
+    .right{margin-left:auto}
+    .small{font-size:12px}
+    mark{background:var(--mark); color:#000; padding:0 2px; border-radius:4px}
 
-<style>
-  :root{ --bg:#f4f6f8; --fg:#101216; --muted:#6b7380; --card:#ffffff;
-         --accent:#3b82f6; --accent-weak:#e6efff; --danger:#ef4444; --radius:16px; }
-  *{box-sizing:border-box}
-  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-        background:var(--bg); color:var(--fg); }
-  .wrap{max-width:960px; margin:0 auto; padding:16px; display:grid; gap:16px}
-  header{display:flex; align-items:center; gap:12px; flex-wrap:wrap; position:sticky; top:0; background:var(--bg); padding:8px 0; z-index:10}
-  .title{font-size:1.4rem; font-weight:700; margin-right:auto}
-  .search{display:flex; align-items:center; gap:8px; background:var(--card); border:1px solid #e5e7eb; border-radius:999px; padding:8px 12px; min-width:240px}
-  .search input{border:none; outline:none; width:220px; background:transparent}
-  .toolbar{display:flex; gap:8px; flex-wrap:wrap}
-  button{border:none; border-radius:999px; padding:10px 14px; font-weight:600; cursor:pointer; background:var(--accent); color:#fff; transition:.15s transform ease,.2s opacity ease}
-  .btn-secondary{background:var(--card); color:var(--fg); border:1px solid #e5e7eb}
-  .btn-danger{background:var(--danger); color:#fff}
-  .btn-ghost{background:transparent; color:var(--fg)}
-  button:active{transform:scale(0.98)}
-  .grid{display:grid; grid-template-columns:1fr; gap:16px}
-  .card{background:var(--card); border:1px solid #e5e7eb; border-radius:var(--radius); padding:16px}
-  .editor-title{display:flex; align-items:center; gap:8px; justify-content:space-between}
-  textarea{ width:100%; min-height:160px; resize:vertical; padding:12px; border-radius:12px; border:1px solid #e5e7eb; outline:none; font-size:1rem; line-height:1.5; background:#fff}
-  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
-  .spacer{flex:1}
-  .list{display:grid; gap:12px}
-  .entry{background:var(--card); border:1px solid #e5e7eb; border-radius:14px; padding:12px; display:grid; gap:8px}
-  .entry-head{display:flex; gap:8px; align-items:center}
-  .ts{font-size:.85rem; color:var(--muted)}
-  .entry-actions{margin-left:auto; display:flex; gap:6px}
-  .empty{color:var(--muted); text-align:center; padding:24px}
-  .hint{font-size:.9rem; color:var(--muted)}
-  .footer{color:var(--muted); text-align:center; font-size:.85rem; padding:8px 0 24px}
-  mark{background:#fff59d; padding:0 .1em; border-radius:4px}
-  @media (min-width:960px){ .grid{grid-template-columns:1fr 1fr} }
-</style>
+    /* Modals */
+    .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:50}
+    .modal{width:min(980px,96vw); background:#0e1430; border:1px solid var(--border); border-radius:14px; padding:16px}
+    .modal h3{margin:0 0 10px 0}
+
+    /* Toasts */
+    #toaster{position:fixed; right:16px; bottom:16px; display:flex; flex-direction:column; gap:8px; z-index:9999}
+    .toast{min-width:260px; max-width:420px; padding:10px 12px; border-radius:10px; color:#fff; font-weight:600; box-shadow:0 10px 20px rgba(0,0,0,.25)}
+    .toast.info{background:#2b4a9e}
+    .toast.success{background:#2a7a47}
+    .toast.error{background:#a33a3a}
+    .toast button{background:transparent; border:none; color:#fff; margin-left:8px; cursor:pointer; font-weight:800}
+
+    /* Flash */
+    @keyframes flash { 0%{box-shadow:0 0 0 0 rgba(91,140,255,.9)} 100%{box-shadow:0 0 0 12px rgba(91,140,255,0)} }
+    .flash { position:relative; animation:flash 1s ease-out 0s 1; border-color:#5b8cff !important; background:linear-gradient(180deg,#13204a 0%, #0f1738 100%); }
+  </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="title">Diary+</div>
-      <div class="search">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 21l-3.8-3.8M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" stroke="#6b7380" stroke-width="2" stroke-linecap="round"/></svg>
-        <input id="q" type="search" placeholder="Search entries…" />
-      </div>
-      <div class="toolbar">
-        <button id="btnContact">@ Contact</button>
-        <button class="btn-secondary" id="btnExport">Export CSV</button>
-      </div>
-    </header>
+  <header>
+    <h1>Customer Tasks (Manual Only)</h1>
+    <div class="sub">Add every task by typing the customer's name and any phone number. No import needed.</div>
+    <div class="toolbar">
+      <button class="btn secondary" onclick="window.CT && CT.openSearchCenter()">Search</button>
+      <button class="btn secondary" onclick="window.CT && CT.exportCSV()">Export CSV</button>
+      <button class="btn secondary" onclick="window.CT && CT.backupJSON()">Backup</button>
+      <button class="btn primary"   onclick="window.CT && CT.openAdd()">Add Task</button>
+    </div>
+    <div class="tabs">
+      <div id="tabActive"   class="tab active" onclick="window.CT && CT.switchTab('Active')">Active <span id="countActive" class="small"></span></div>
+      <div id="tabCompleted" class="tab"       onclick="window.CT && CT.switchTab('Completed')">Completed <span id="countCompleted" class="small"></span></div>
+    </div>
+  </header>
 
-    <div class="grid">
-      <section class="card">
-        <div class="editor-title">
-          <h3 style="margin:0">New Entry</h3>
-          <span class="hint" id="permHint"></span>
+  <div class="container">
+    <div id="activeView">
+      <div class="card">
+        <div class="filters">
+          <button data-filter="Pending" class="chip active">Pending</button>
+          <button data-filter="In Progress" class="chip">In Progress</button>
+          <button data-filter="On Hold" class="chip">On Hold</button>
+          <div class="more">
+            <button id="moreBtn" class="chip">More ▾</button>
+            <div id="moreMenu" class="dropdown">
+              <button data-filter="CoreActive">All (P • IP • OH)</button>
+              <button data-filter="AllActive">All (Active incl. Cancelled)</button>
+              <button data-filter="Cancelled">Cancelled</button>
+            </div>
+          </div>
+          <div class="right muted">Overdue tasks show <span class="pill p-overdue">Overdue</span></div>
         </div>
-        <textarea id="editor" placeholder="Write your entry here…"></textarea>
-        <div class="row">
-          <div class="spacer"></div>
-          <button id="btnSave">Save</button>
-          <button id="btnClear" class="btn-ghost">Clear</button>
-        </div>
-        <div class="hint">Tip: Use <strong>@ Contact</strong> to insert <em>Name (Phone)</em>. If your browser doesn’t support the Contact Picker API, you’ll get a quick manual prompt.</div>
-      </section>
-
-      <section class="card">
-        <h3 style="margin-top:0">Your Entries</h3>
-        <div id="list" class="list"></div>
-        <div id="empty" class="empty" hidden>No entries yet. Start by writing something and press <strong>Save</strong>.</div>
-      </section>
+        <div id="activeList" class="list"></div>
+      </div>
     </div>
 
-    <div class="footer">Data is stored locally in your browser (localStorage).</div>
+    <div id="completedView" class="hidden">
+      <div class="card">
+        <div class="filters">
+          <span class="muted">These tasks are archived. Change status to restore to Active.</span>
+        </div>
+        <div id="completedList" class="list"></div>
+      </div>
+    </div>
   </div>
 
-<script>
-/* Storage */
-const LS_ENTRIES = "diary.entries.v1";
-function loadEntries(){ try{ return JSON.parse(localStorage.getItem(LS_ENTRIES)) ?? []; }catch{ return []; } }
-function saveEntries(arr){ localStorage.setItem(LS_ENTRIES, JSON.stringify(arr)); }
+  <!-- Task Modal -->
+  <div id="taskModal" class="modal-backdrop">
+    <div class="modal">
+      <h3 id="taskModalTitle">Add Task</h3>
+      <div class="inline wrap" style="gap:8px; margin-bottom:8px">
+        <input id="taskSearch" class="grow" type="text" placeholder="Search existing customers by name or digits…" />
+        <button id="taskSearchBtn" class="btn secondary sm" type="button">Search</button>
+      </div>
+      <div class="inline wrap" style="gap:16px">
+        <div class="grow">
+          <label>Customer Name</label>
+          <input id="taskCustomerName" type="text" placeholder="Type name (new or existing)" />
+        </div>
+        <div class="grow">
+          <label>Customer Mobile(s)</label>
+          <input id="taskCustomerMobile" type="text" placeholder="Any number(s), comma-separated for multiple" />
+        </div>
+      </div>
+      <div class="small muted" id="taskCustomerMeta" style="margin-top:6px"></div>
 
-/* State */
-let entries = loadEntries(); let editingId = null;
+      <div class="hr"></div>
+      <div class="inline wrap" style="gap:16px; margin-top:10px">
+        <div class="grow">
+          <label>Task Description</label>
+          <textarea id="taskDesc" placeholder="What needs to be done?"></textarea>
+        </div>
+        <div style="min-width:240px; flex:1">
+          <label>Due Date</label>
+          <input id="taskDue" type="date" />
+          <div class="hr"></div>
+          <label>Status</label>
+          <select id="taskStatus">
+            <option>Pending</option>
+            <option>In Progress</option>
+            <option>On Hold</option>
+            <option>Cancelled</option>
+            <option>Completed</option>
+          </select>
+          <div class="small muted" style="margin-top:6px">Completed tasks move to the Completed tab.</div>
+        </div>
+      </div>
 
-/* Helpers */
-function uid(){ return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-function fmtTs(ts){ try{ const d=new Date(ts); return d.toLocaleString(); }catch{ return ts+""; } }
-function toCSV(rows){ const esc = s => `"${(s??"").toString().replace(/"/g,'""')}"`;
-  const header = ["id","timestamp","text"];
-  const data = rows.map(r => [r.id, new Date(r.ts).toISOString(), r.text]);
-  return [header, ...data].map(cols => cols.map(esc).join(",")).join("\n"); }
-function download(filename, text){ const a=document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([text], {type:"text/csv"})); a.download=filename; a.click(); URL.revokeObjectURL(a.href); }
-function escapeHTML(s){ return (s??"").toString().replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function escapeRegExp(s){ return (s??"").toString().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-function highlight(text, query){ if(!query) return escapeHTML(text); const safe=escapeHTML(text);
-  const re=new RegExp(escapeRegExp(query),"gi"); return safe.replace(re, m=>`<mark>${m}</mark>`); }
+      <div class="hr"></div>
+      <div class="inline wrap">
+        <div class="inline" style="gap:8px">
+          <button id="saveTaskBtn" class="btn ok">Save</button>
+          <button id="cancelTaskBtn" class="btn secondary">Cancel</button>
+        </div>
+        <div class="right inline" style="gap:8px">
+          <button id="deleteTaskBtn" class="btn danger hidden">Delete</button>
+          <div class="small muted" id="taskTimestamps"></div>
+        </div>
+      </div>
 
-/* DOM */
-const editor = document.getElementById("editor");
-const list = document.getElementById("list");
-const empty = document.getElementById("empty");
-const q = document.getElementById("q");
-const permHint = document.getElementById("permHint");
+      <div id="taskSearchResults" class="list" style="margin-top:10px; max-height:38vh; overflow:auto;"></div>
+    </div>
+  </div>
 
-function render(){
-  const query = q.value.trim().toLowerCase();
-  list.innerHTML = "";
-  const filtered = entries.filter(e => e.text.toLowerCase().includes(query));
-  if(filtered.length === 0){ empty.hidden=false; return; }
-  empty.hidden = true;
-  for(const e of filtered.slice().reverse()){
-    const card = document.createElement("div"); card.className="entry";
-    const head = document.createElement("div"); head.className="entry-head";
-    const ts = document.createElement("div"); ts.className="ts"; ts.textContent = fmtTs(e.ts);
-    head.appendChild(ts);
+  <!-- SEARCH CENTER -->
+  <div id="searchCenter" class="modal-backdrop">
+    <div class="modal">
+      <div class="inline wrap">
+        <h3 class="grow">Search Center</h3>
+        <button id="closeSearchCenter" class="btn secondary sm">Close</button>
+      </div>
+      <div class="tabs" style="margin-top:10px">
+        <div id="tabName" class="tab active">Name</div>
+        <div id="tabMobile" class="tab">Mobile</div>
+        <div id="tabTask" class="tab">Task</div>
+      </div>
+      <div class="card" style="margin-top:10px">
+        <div class="inline wrap" style="gap:8px">
+          <div class="grow"><input id="searchInput" type="text" placeholder="Enter value to search…"/></div>
+          <select id="searchScope" class="btn secondary sm" style="padding:6px 10px">
+            <option value="all">Scope: All (Active + Completed)</option>
+            <option value="active">Scope: Active</option>
+            <option value="completed">Scope: Completed</option>
+          </select>
+          <button id="runSearch" class="btn secondary sm">Search</button>
+        </div>
+        <div id="taskFilters" class="inline wrap" style="gap:8px; margin-top:10px; display:none">
+          <div class="inline wrap" style="gap:6px">
+            <span class="small muted" style="margin-right:4px">Status:</span>
+            <span class="chip" data-status="Pending">Pending</span>
+            <span class="chip" data-status="In Progress">In Progress</span>
+            <span class="chip" data-status="On Hold">On Hold</span>
+            <span class="chip" data-status="Cancelled">Cancelled</span>
+            <span class="chip" data-status="Completed">Completed</span>
+          </div>
+          <div class="inline wrap" style="gap:6px">
+            <span class="small muted">Due between</span>
+            <input id="dueFrom" type="date" style="width:auto"/>
+            <span class="small muted">and</span>
+            <input id="dueTo" type="date" style="width:auto"/>
+          </div>
+        </div>
+      </div>
+      <div class="inline wrap" style="gap:8px; margin:10px 0 6px">
+        <button id="prevMatch" class="btn secondary sm">◀ Prev</button>
+        <button id="nextMatch" class="btn secondary sm">Next ▶</button>
+        <div class="small muted" id="matchIndex" style="margin-left:8px"></div>
+        <div class="right small muted" id="searchCount"></div>
+      </div>
+      <div id="searchResults" class="list" style="max-height:55vh; overflow:auto"></div>
+    </div>
+  </div>
 
-    const actions = document.createElement("div"); actions.className="entry-actions";
-    const btnEdit = document.createElement("button"); btnEdit.className="btn-secondary"; btnEdit.textContent="Edit";
-    btnEdit.onclick = ()=>{ editor.value=e.text; editingId=e.id; editor.scrollIntoView({behavior:"smooth", block:"center"}); };
-    actions.appendChild(btnEdit);
+  <div id="toaster"></div>
 
-    const btnDelete = document.createElement("button"); btnDelete.className="btn-danger"; btnDelete.textContent="Delete";
-    btnDelete.onclick = ()=>{ if(!confirm("Delete this entry?")) return; entries = entries.filter(x=>x.id!==e.id); saveEntries(entries); render(); };
-    actions.appendChild(btnDelete);
+  <script>
+  (function(){
+    'use strict';
+    if (window.CT && window.CT.__loaded) { console.warn('CT already loaded; reinitializing safely'); }
+    const CT = window.CT = window.CT || {};
+    CT.__loaded = true;
 
-    const btnEmail = document.createElement("button"); btnEmail.className="btn-secondary"; btnEmail.textContent="Email";
-    btnEmail.onclick = ()=>{ const subject=encodeURIComponent("Diary Entry – "+fmtTs(e.ts));
-      const body=encodeURIComponent(e.text); const to="dairy4mathew@gmail.com";
-      window.location.href = `mailto:${to}?subject=${subject}&body=${body}`; };
-    actions.appendChild(btnEmail);
+    /* ===== Utils ===== */
+    const q = sel => document.querySelector(sel);
+    const qAll = sel => Array.from(document.querySelectorAll(sel));
+    const nowISO = () => new Date().toISOString();
+    const fmtDate = d => d ? new Date(d).toLocaleString() : "";
+    const normalizeDigits = s => (s||"").replace(/[^\d]/g,"");
+    const escapeHtml = s => String(s??"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c] || c));
+    const highlightTerm = (text, term)=>{
+      if(!term) return escapeHtml(text||"");
+      const safe = escapeHtml(text||"");
+      const t = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return safe.replace(new RegExp(t,"ig"), m=>`<mark>${m}</mark>`);
+    };
+    const uuid = ()=> ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c/4).toString(16));
 
-    head.appendChild(actions);
+    /* ===== Toasts ===== */
+    const elToaster = q('#toaster');
+    function showToast(type, msg, ms=3000){
+      try{
+        if(!elToaster){ alert(msg); return; }
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `<span>${escapeHtml(msg)}</span><button onclick="this.parentElement.remove()">✕</button>`;
+        elToaster.appendChild(el);
+        setTimeout(()=>{ el.remove(); }, ms);
+      }catch(e){ console.error('Toast error', e); }
+    }
 
-    const body = document.createElement("div");
-    const queryRaw = q.value.trim(); body.innerHTML = highlight(e.text, queryRaw);
+    /* ===== Persistence ===== */
+    const LS_CUSTOMERS = "ct_customers_v1";
+    const LS_TASKS = "ct_tasks_v1";
+    let customers = loadJSON(LS_CUSTOMERS, []);
+    let tasks = loadJSON(LS_TASKS, []);
+    function loadJSON(key, fallback){
+      try{ const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; }
+      catch(e){ console.warn('loadJSON', e); return fallback; }
+    }
+    function saveAll(){
+      try{
+        localStorage.setItem(LS_CUSTOMERS, JSON.stringify(customers));
+        localStorage.setItem(LS_TASKS, JSON.stringify(tasks));
+        render();
+      }catch(e){ console.error('saveAll', e); }
+    }
 
-    card.appendChild(head); card.appendChild(body); list.appendChild(card);
-  }
-}
+    /* ===== Constants & State ===== */
+    const STATUS = {
+      PENDING: "Pending",
+      INPROG: "In Progress",
+      ONHOLD: "On Hold",
+      CANCELLED: "Cancelled",
+      COMPLETED: "Completed",
+    };
+    let activeTab = "Active";
+    let activeFilter = STATUS.PENDING;
 
-/* Contact insert with fallback */
-async function insertContact(){
-  const supports = ('contacts' in navigator) && ('select' in navigator.contacts);
-  if(supports){
-    try{
-      const props=['name','tel']; const opts={multiple:false};
-      const chosen = await navigator.contacts.select(props, opts);
-      if(!chosen || chosen.length===0){ alert("No contact selected."); return; }
-      const c=chosen[0]; const name=(Array.isArray(c.name)?c.name[0]:c.name)||""; const phone=(Array.isArray(c.tel)?c.tel[0]:c.tel)||"";
-      if(!name && !phone){ alert("Selected contact has no readable name/phone."); return; }
-      appendToEditor(formatContact(name,phone)); return;
-    }catch(e){ alert("Could not access contacts. Falling back to manual input."); }
-  }
-  const name = prompt("Contact name:"); if(name===null) return;
-  const phone = prompt("Phone number:"); if(phone===null) return;
-  appendToEditor(formatContact(name,phone));
-}
-function formatContact(name,phone){ const nm=(name||"").trim(); const ph=(phone||"").trim(); return nm&&ph?`${nm} (${ph})`: (nm||ph||""); }
-function appendToEditor(text){ if(!text) return; const cur=editor.value; editor.value = (cur?cur+"\n":"")+text; editor.focus(); }
+    /* ===== DOM Refs ===== */
+    const elActiveView = q("#activeView");
+    const elCompletedView = q("#completedView");
+    const elActiveList = q("#activeList");
+    const elCompletedList = q("#completedList");
 
-/* Save / Export */
-function saveCurrent(){
-  const txt=editor.value.trim(); if(!txt){ alert("Write something first."); return; }
-  if(editingId){ entries = entries.map(e=>e.id===editingId?{...e, text:txt, ts:Date.now()}:e); editingId=null; }
-  else { entries.push({id:uid(), text:txt, ts:Date.now()}); }
-  saveEntries(entries); editor.value=""; render();
-}
-function exportCSV(){ if(entries.length===0){ alert("No entries to export."); return; } download("diary_entries.csv", toCSV(entries)); }
+    /* ===== Rendering ===== */
+    function isOverdue(t){
+      if(!t.dueDate || t.status===STATUS.COMPLETED) return false;
+      const today = new Date(); today.setHours(0,0,0,0);
+      const due = new Date(t.dueDate); due.setHours(0,0,0,0);
+      return due < today;
+    }
+    function pillClass(status){
+      switch(status){
+        case STATUS.PENDING: return "p-pending";
+        case STATUS.INPROG: return "p-inprog";
+        case STATUS.ONHOLD: return "p-onhold";
+        case STATUS.CANCELLED: return "p-cancel";
+        case STATUS.COMPLETED: return "p-complete";
+        default: return "p-pending";
+      }
+    }
+    function render(){
+      try{
+        q("#countActive").textContent = `(${tasks.filter(t=>t.status!==STATUS.COMPLETED).length})`;
+        q("#countCompleted").textContent = `(${tasks.filter(t=>t.status===STATUS.COMPLETED).length})`;
+        if(activeTab==="Active") renderActive(); else renderCompleted();
+      }catch(e){ console.error('render', e); }
+    }
+    function renderActive(){
+      elActiveList.innerHTML = "";
+      let pool = tasks.filter(t => t.status !== STATUS.COMPLETED);
+      if([STATUS.PENDING, STATUS.INPROG, STATUS.ONHOLD, STATUS.CANCELLED].includes(activeFilter)){
+        pool = pool.filter(t => t.status === activeFilter);
+      } else if (activeFilter === "CoreActive") {
+        pool = pool.filter(t => [STATUS.PENDING, STATUS.INPROG, STATUS.ONHOLD].includes(t.status));
+      }
+      pool.sort((a,b)=> new Date(b.updatedAt||b.createdAt) - new Date(a.updatedAt||a.createdAt));
+      if(pool.length===0){
+        elActiveList.innerHTML = `<div class="row"><div class="meta">No active tasks.</div><button class="btn primary sm" onclick="CT.openAdd()">Add Task</button></div>`;
+        return;
+      }
+      for(const t of pool){
+        const c = customers.find(c=>c.id===t.customerId);
+        const name = c ? (c.name||"Unknown") : "(missing)";
+        const nums = c ? (c.numbers||[]).join(", ") : "";
+        const overdue = isOverdue(t);
+        const row = document.createElement("div");
+        row.className = "row";
+        row.dataset.taskId = t.id;
+        row.tabIndex = 0;
+        row.innerHTML = `
+          <div class="meta">
+            <div class="inline">
+              <strong>${escapeHtml(name)}</strong>
+              <span class="muted">— ${escapeHtml(nums)}</span>
+              <span class="pill ${pillClass(t.status)}" style="margin-left:8px">${t.status}</span>
+              ${t.dueDate ? `<span class="pill ${overdue? 'p-overdue':'p-due'}" style="margin-left:8px">Due: ${t.dueDate}</span>` : ""}
+            </div>
+            <div class="muted small" style="margin-top:4px">${escapeHtml(t.description||"(no description)")} • Created: ${fmtDate(t.createdAt)} • Updated: ${fmtDate(t.updatedAt)}</div>
+          </div>
+          <div class="inline">
+            <button class="btn secondary sm" data-edit="${t.id}" onclick='CT.editTask("${t.id}")'>Edit</button>
+            <button class="btn secondary sm" data-cycle="${t.id}" title="Next status (Pending → IP → OH → Cancelled)">Next</button>
+            <button class="btn ok sm" data-complete="${t.id}" onclick='CT.markStatus("${t.id}","${STATUS.COMPLETED}")'>Complete</button>
+            <button class="btn danger sm" data-delete="${t.id}">Delete</button>
+          </div>
+        `;
+        elActiveList.appendChild(row);
+      }
+    }
+    function renderCompleted(){
+      elCompletedList.innerHTML = "";
+      let pool = tasks.filter(t => t.status === STATUS.COMPLETED);
+      pool.sort((a,b)=> new Date(b.updatedAt||b.createdAt) - new Date(a.updatedAt||a.createdAt));
+      if(pool.length===0){
+        elCompletedList.innerHTML = `<div class="row"><div class="meta">No completed tasks.</div></div>`;
+        return;
+      }
+      for(const t of pool){
+        const c = customers.find(c=>c.id===t.customerId);
+        const name = c ? (c.name||"Unknown") : "(missing)";
+        const nums = c ? (c.numbers||[]).join(", ") : "";
+        const row = document.createElement("div");
+        row.className = "row";
+        row.dataset.taskId = t.id;
+        row.tabIndex = 0;
+        row.innerHTML = `
+          <div class="meta">
+            <div class="inline">
+              <strong>${escapeHtml(name)}</strong>
+              <span class="muted">— ${escapeHtml(nums)}</span>
+              <span class="pill p-complete" style="margin-left:8px">Completed</span>
+              ${t.dueDate ? `<span class="pill p-due" style="margin-left:8px">Was Due: ${t.dueDate}</span>` : ""}
+            </div>
+            <div class="muted small" style="margin-top:4px">${escapeHtml(t.description||"(no description)")} • Created: ${fmtDate(t.createdAt)} • Updated: ${fmtDate(t.updatedAt)}</div>
+          </div>
+          <div class="inline">
+            <button class="btn secondary sm" data-edit="${t.id}" onclick='CT.editTask("${t.id}")'>Open</button>
+            <button class="btn warn sm" data-restore="${t.id}" onclick='CT.markStatus("${t.id}","${STATUS.PENDING}")'>Restore</button>
+            <button class="btn danger sm" data-delete="${t.id}">Delete</button>
+          </div>
+        `;
+        elCompletedList.appendChild(row);
+      }
+    }
 
-/* Wire UI */
-document.getElementById("btnContact").addEventListener("click", insertContact);
-document.getElementById("btnSave").addEventListener("click", saveCurrent);
-document.getElementById("btnClear").addEventListener("click", ()=>{ editor.value=""; editingId=null; });
-document.getElementById("btnExport").addEventListener("click", exportCSV);
-q.addEventListener("input", render);
-
-/* First render */
-render();
-</script>
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(err => console.warn("SW failed", err));
+    /* ===== Tabs & Filters ===== */
+    CT.switchTab = function(which){
+      activeTab = which;
+      q("#tabActive").classList.toggle("active", which==="Active");
+      q("#tabCompleted").classList.toggle("active", which==="Completed");
+      elActiveView.classList.toggle("hidden", which!=="Active");
+      elCompletedView.classList.toggle("hidden", which!=="Completed");
+      render();
+    };
+    qAll('.filters .chip[data-filter]').forEach(ch=>{
+      ch.addEventListener("click", ()=>{
+        qAll('.filters .chip[data-filter]').forEach(x=>x.classList.remove("active"));
+        ch.classList.add("active");
+        activeFilter = ch.getAttribute("data-filter");
+        render();
+      });
     });
-  }
-</script>
+    const elMoreBtn = q("#moreBtn");
+    const elMoreMenu = q("#moreMenu");
+    if (elMoreBtn && elMoreMenu){
+      elMoreBtn.addEventListener("click", ()=>{ elMoreMenu.style.display = elMoreMenu.style.display === "block" ? "none" : "block"; });
+      document.addEventListener("click", (e)=>{ if(!elMoreBtn.contains(e.target) && !elMoreMenu.contains(e.target)) elMoreMenu.style.display = "none"; });
+      qAll('#moreMenu button[data-filter]').forEach(b=>{
+        b.addEventListener("click", ()=>{ activeFilter = b.getAttribute("data-filter"); qAll('.filters .chip[data-filter]').forEach(x=>x.classList.remove("active")); elMoreMenu.style.display = "none"; render(); });
+      });
+    }
+
+    /* ===== Task Modal ===== */
+    const elTaskModal = q("#taskModal");
+    const elTaskModalTitle = q("#taskModalTitle");
+    const elTaskSearch = q("#taskSearch");
+    const elTaskSearchBtn = q("#taskSearchBtn");
+    const elTaskSearchResults = q("#taskSearchResults");
+    const elTaskCustomerName = q("#taskCustomerName");
+    const elTaskCustomerMobile = q("#taskCustomerMobile");
+    const elTaskCustomerMeta = q("#taskCustomerMeta");
+    const elTaskDesc = q("#taskDesc");
+    const elTaskDue = q("#taskDue");
+    const elTaskStatus = q("#taskStatus");
+    const elSaveTaskBtn = q("#saveTaskBtn");
+    const elCancelTaskBtn = q("#cancelTaskBtn");
+    const elDeleteTaskBtn = q("#deleteTaskBtn");
+    const elTaskTimestamps = q("#taskTimestamps");
+
+    let editingTaskId = null;
+    let editingTaskCustomerId = null;
+
+    function openTaskModal(customerId=null, taskId=null){
+      editingTaskId = taskId;
+      editingTaskCustomerId = customerId;
+      elDeleteTaskBtn.classList.toggle('hidden', !taskId);
+
+      if(taskId){
+        const t = tasks.find(x=>x.id===taskId);
+        const c = customers.find(x=>x.id===t.customerId);
+        elTaskModalTitle.textContent = "Edit Task";
+        elTaskCustomerName.value = c?.name || "";
+        elTaskCustomerMobile.value = (c?.numbers || []).join(", ");
+        elTaskCustomerMeta.textContent = c ? `Existing customer • Created: ${fmtDate(c.createdAt)} • Updated: ${fmtDate(c.updatedAt)}` : "";
+        elTaskDesc.value = t.description || "";
+        elTaskDue.value = t.dueDate || "";
+        elTaskStatus.value = t.status || STATUS.PENDING;
+        elTaskTimestamps.textContent = `Created: ${fmtDate(t.createdAt)} • Updated: ${fmtDate(t.updatedAt)}`;
+      }else{
+        elTaskModalTitle.textContent = "Add Task";
+        elTaskCustomerName.value = "";
+        elTaskCustomerMobile.value = "";
+        elTaskCustomerMeta.textContent = "Type a name and any number. If a customer exists with same name or number, we will link to it; otherwise a new customer is created.";
+        elTaskDesc.value = "";
+        elTaskDue.value = "";
+        elTaskStatus.value = STATUS.PENDING;
+        elTaskTimestamps.textContent = "";
+      }
+      elTaskSearch.value = "";
+      renderTaskSearchResults();
+      elTaskModal.style.display = "flex";
+      setTimeout(()=>elTaskCustomerName.focus(), 0);
+    }
+    function closeTaskModal(){ elTaskModal.style.display = "none"; }
+
+    function renderTaskSearchResults(){
+      const raw = (elTaskSearch.value || "");
+      const term = raw.trim().toLowerCase();
+      const digitTerm = normalizeDigits(raw);
+      let cs = customers.slice();
+      if (term || digitTerm) {
+        cs = cs.filter(c=>{
+          const name = (c.name || "").toLowerCase();
+          const nums = (c.numbers || []);
+          const numbersJoined = nums.join(" ").toLowerCase();
+          const numbersDigits = nums.map(n=> normalizeDigits(n||"")).join(" ");
+          const textHit = name.includes(term) || numbersJoined.includes(term);
+          const digitHit = digitTerm && numbersDigits.includes(digitTerm);
+          return textHit || digitHit;
+        });
+      }
+      cs.sort((a,b)=>{
+        const at = +new Date(a.updatedAt || a.createdAt || 0);
+        const bt = +new Date(b.updatedAt || b.createdAt || 0);
+        if (bt !== at) return bt - at;
+        return (a.name||"").localeCompare(b.name||"");
+      });
+      elTaskSearchResults.innerHTML = "";
+      if (cs.length === 0) {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.innerHTML = `<div class="meta">No customer found. You can type details above and save.</div>`;
+        elTaskSearchResults.appendChild(row);
+        return;
+      }
+      for (const c of cs) {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.innerHTML = `
+          <div class="meta">
+            <div><strong>${escapeHtml(c.name||"Unknown")}</strong>
+              <span class="muted">— ${(c.numbers||[]).map(escapeHtml).join(", ")}</span>
+            </div>
+            <div class="muted small">Created: ${fmtDate(c.createdAt)} • Updated: ${fmtDate(c.updatedAt)}</div>
+          </div>
+          <div class="inline">
+            <button class="btn ok sm" data-use="${c.id}">Use</button>
+          </div>
+        `;
+        elTaskSearchResults.appendChild(row);
+      }
+      elTaskSearchResults.querySelectorAll("button[data-use]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          const id = b.getAttribute("data-use");
+          const c = customers.find(x=>x.id===id);
+          if(!c) return;
+          editingTaskCustomerId = id;
+          elTaskCustomerName.value = c.name || "";
+          elTaskCustomerMobile.value = (c.numbers||[]).join(", ");
+          elTaskCustomerMeta.textContent = `Selected existing • Created: ${fmtDate(c.createdAt)} • Updated: ${fmtDate(c.updatedAt)}`;
+          showToast('success','Customer selected');
+        });
+      });
+    }
+    elTaskSearch.addEventListener("input", renderTaskSearchResults);
+    elTaskSearchBtn.addEventListener("click", renderTaskSearchResults);
+    elTaskSearch.addEventListener("keydown", (e)=>{ if (e.key === "Enter") renderTaskSearchResults(); });
+
+    elSaveTaskBtn.addEventListener("click", ()=>{
+      try{
+        const name = (elTaskCustomerName.value||"").trim();
+        const numbersRaw = (elTaskCustomerMobile.value||"").split(",").map(s=>s.trim()).filter(Boolean);
+        const desc = elTaskDesc.value.trim();
+        const due = elTaskDue.value || "";
+        const st = elTaskStatus.value;
+        let customer = null;
+        if(editingTaskCustomerId){
+          customer = customers.find(c=>c.id===editingTaskCustomerId) || null;
+        }
+        if(!customer && name){
+          customer = customers.find(c=> (c.name||"") === name) || null;
+        }
+        if(!customer && numbersRaw.length){
+          const flat = numbersRaw.map(n=>normalizeDigits(n));
+          customer = customers.find(c => (c.numbers||[]).some(m => flat.includes(normalizeDigits(m)))) || null;
+        }
+        if(!customer){
+          customer = { id: uuid(), name, numbers: numbersRaw.slice(), createdAt: nowISO(), updatedAt: nowISO() };
+          customers.push(customer);
+        }else{
+          const exist = new Set((customer.numbers||[]).map(x=>x.trim()).filter(Boolean));
+          for(const n of numbersRaw){ if(n && !exist.has(n)){ customer.numbers.push(n); exist.add(n); } }
+          customer.updatedAt = nowISO();
+        }
+        if(editingTaskId){
+          const t = tasks.find(x=>x.id===editingTaskId);
+          t.customerId = customer.id;
+          t.description = desc;
+          t.dueDate = due;
+          t.status = st;
+          t.updatedAt = nowISO();
+        }else{
+          tasks.push({ id: uuid(), customerId: customer.id, description: desc, dueDate: due, status: st, createdAt: nowISO(), updatedAt: nowISO() });
+        }
+        saveAll();
+        closeTaskModal();
+        showToast('success','Task saved');
+      }catch(e){ console.error('save task', e); showToast('error','Could not save task'); }
+    });
+    elCancelTaskBtn.addEventListener("click", closeTaskModal);
+
+    elDeleteTaskBtn.addEventListener("click", ()=>{
+      if (!editingTaskId) return;
+      if (!confirm('Delete this task? This cannot be undone.')) return;
+      deleteTask(editingTaskId);
+      closeTaskModal();
+    });
+
+    CT.openAdd = ()=> openTaskModal(null, null);
+    CT.editTask = (id)=>{ const t = tasks.find(x=>x.id===id); if(t) openTaskModal(t.customerId, id); };
+    CT.markStatus = (id, st)=>{
+      const t = tasks.find(x=>x.id===id); if(!t) return;
+      if (st === STATUS.COMPLETED && !confirm('Mark this task as Completed?')) return;
+      t.status=st; t.updatedAt=nowISO(); saveAll();
+      showToast('success', st==='Completed'?'Task completed':'Task status changed');
+    };
+
+    /* ===== Search Center ===== */
+    const elSearchCenter = q("#searchCenter");
+    const elCloseSearchCenter = q("#closeSearchCenter");
+    const elTabName = q("#tabName");
+    const elTabMobile = q("#tabMobile");
+    const elTabTask = q("#tabTask");
+    const elSearchInput = q("#searchInput");
+    const elSearchScope = q("#searchScope");
+    const elRunSearch = q("#runSearch");
+    const elTaskFilters = q("#taskFilters");
+    const elStatusChips = elTaskFilters.querySelectorAll('.chip[data-status]');
+    const elDueFrom = q("#dueFrom");
+    const elDueTo = q("#dueTo");
+    const elPrevMatch = q("#prevMatch");
+    const elNextMatch = q("#nextMatch");
+    const elMatchIndex = q("#matchIndex");
+    const elSearchCount = q("#searchCount");
+    const elSearchResults = q("#searchResults");
+
+    let searchMode = "name";
+    let matches = [];
+    let currentIdx = -1;
+
+    function setMode(mode){
+      searchMode = mode;
+      [elTabName, elTabMobile, elTabTask].forEach(t => t.classList.remove("active"));
+      if(mode==="name") elTabName.classList.add("active");
+      if(mode==="mobile") elTabMobile.classList.add("active");
+      if(mode==="task") elTabTask.classList.add("active");
+      elTaskFilters.style.display = (mode==="task") ? "flex" : "none";
+      elSearchInput.placeholder = mode==="name" ? "Type part of customer name…" : mode==="mobile" ? "Type any digits (e.g., last 4)…" : "Type part of task description…";
+      elSearchResults.innerHTML = ""; elSearchCount.textContent = ""; elMatchIndex.textContent = ""; currentIdx = -1; matches = [];
+    }
+    elTabName.addEventListener("click", ()=>setMode("name"));
+    elTabMobile.addEventListener("click", ()=>setMode("mobile"));
+    elTabTask.addEventListener("click", ()=>setMode("task"));
+
+    elStatusChips.forEach(ch=> ch.addEventListener("click", ()=> ch.classList.toggle("active")));
+
+    function setFilterAndRender(key){
+      activeFilter = key;
+      qAll('.filters .chip[data-filter]').forEach(x=>{
+        x.classList.toggle('active', x.getAttribute('data-filter') === key);
+      });
+      render();
+    }
+
+    function jumpToTaskInMain(taskId){
+      const t = tasks.find(x=>x.id===taskId);
+      if (!t) return;
+      if (t.status === STATUS.COMPLETED){
+        CT.switchTab("Completed");
+      } else {
+        CT.switchTab("Active");
+        const map = {
+          [STATUS.PENDING]: "Pending",
+          [STATUS.INPROG]: "In Progress",
+          [STATUS.ONHOLD]: "On Hold",
+          [STATUS.CANCELLED]: "Cancelled"
+        };
+        setFilterAndRender(map[t.status] || "CoreActive");
+      }
+      const container = (t.status === STATUS.COMPLETED) ? elCompletedList : elActiveList;
+      const row = container.querySelector(`.row[data-task-id="${taskId}"]`);
+      if (row){
+        row.scrollIntoView({behavior:'smooth', block:'center'});
+        row.classList.add('flash'); setTimeout(()=>row.classList.remove('flash'), 1200);
+      }
+    }
+
+    function nameSearch(taskPool, term){
+      const setIds = new Set(customers.filter(c => (c.name||"").toLowerCase().includes(term)).map(c => c.id));
+      return taskPool.filter(t => setIds.has(t.customerId));
+    }
+    function mobileSearch(taskPool, digits){
+      const setIds = new Set(
+        customers.filter(c => (c.numbers||[]).some(num => normalizeDigits(num).includes(digits))).map(c => c.id)
+      );
+      return taskPool.filter(t => setIds.has(t.customerId));
+    }
+    function taskSearch(taskPool, term){
+      let out = taskPool.filter(t => (t.description||"").toLowerCase().includes(term));
+      const activeStatuses = Array.from(elStatusChips).filter(c=>c.classList.contains("active")).map(c=>c.getAttribute("data-status"));
+      if (activeStatuses.length){ out = out.filter(t => activeStatuses.includes(t.status)); }
+      const from = elDueFrom.value ? new Date(elDueFrom.value) : null;
+      const to = elDueTo.value ? new Date(elDueTo.value) : null;
+      if (from || to){
+        out = out.filter(t=>{
+          if(!t.dueDate) return false;
+          const d = new Date(t.dueDate);
+          if(from && d < from) return false;
+          if(to && d > to) return false;
+          return true;
+        });
+      }
+      return out;
+    }
+
+    function performSearch(){
+      const raw = elSearchInput.value || "";
+      const term = raw.trim().toLowerCase();
+      const digits = normalizeDigits(raw);
+      if(!term && searchMode!=="mobile"){ return showNoInput(); }
+      if(!digits && searchMode==="mobile"){ return showNoInput(); }
+      let pool = tasks.slice();
+      if (elSearchScope.value === "active") pool = pool.filter(t=>t.status!==STATUS.COMPLETED);
+      if (elSearchScope.value === "completed") pool = pool.filter(t=>t.status===STATUS.COMPLETED);
+      if (searchMode==="name"){ matches = nameSearch(pool, term); }
+      else if (searchMode==="mobile"){ matches = mobileSearch(pool, digits); }
+      else { matches = taskSearch(pool, term); }
+      matches.sort((a,b)=> new Date(b.updatedAt||b.createdAt) - new Date(a.updatedAt||a.createdAt));
+      renderSearchResults(raw);
+      currentIdx = matches.length ? 0 : -1;
+      updateMatchPointer();
+    }
+    function showNoInput(){
+      elSearchResults.innerHTML = `<div class="row"><div class="meta">Enter a value to search.</div></div>`;
+      elSearchCount.textContent = "0 matches"; elMatchIndex.textContent = ""; matches = []; currentIdx = -1;
+    }
+    function renderSearchResults(rawTerm){
+      const el = elSearchResults;
+      el.innerHTML = "";
+      elSearchCount.textContent = `${matches.length} match${matches.length===1?"":"es"}`;
+      if (!matches.length){
+        el.innerHTML = `<div class="row"><div class="meta">No results. Try a shorter term or change scope/filters.</div><div><button class="btn primary sm" onclick="CT.openAdd()">Add Task</button></div></div>`;
+        return;
+      }
+      for (let i=0; i<matches.length; i++){
+        const t = matches[i];
+        const c = customers.find(x=>x.id===t.customerId);
+        const name = c ? (c.name||"Unknown") : "(missing)";
+        const numsArr = c ? (c.numbers||[]) : [];
+        const nums = numsArr.join(", ");
+        const overdue = isOverdue(t);
+        let nameHtml = escapeHtml(name);
+        let numsHtml = escapeHtml(nums);
+        let taskHtml = escapeHtml(t.description||"(no description)");
+        if (searchMode==="name" && rawTerm){ nameHtml = highlightTerm(name, rawTerm); }
+        if (searchMode==="mobile" && rawTerm){ numsHtml = highlightTerm(nums, rawTerm); }
+        if (searchMode==="task" && rawTerm){ taskHtml = highlightTerm(t.description||"", rawTerm); }
+        const row = document.createElement("div");
+        row.className = "row";
+        row.dataset.taskId = t.id;
+        row.innerHTML = `
+          <div class="meta">
+            <div class="inline">
+              <strong>#${i+1}</strong>
+              <strong style="margin-left:6px">${nameHtml}</strong>
+              <span class="muted">— ${numsHtml}</span>
+              <span class="pill ${pillClass(t.status)}" style="margin-left:8px">${t.status}</span>
+              ${t.dueDate ? `<span class="pill ${overdue? 'p-overdue':'p-due'}" style="margin-left:8px">${overdue? 'Overdue:':'Due:'} ${t.dueDate}</span>` : ""}
+            </div>
+            <div class="muted small" style="margin-top:4px">${taskHtml} • Created: ${fmtDate(t.createdAt)} • Updated: ${fmtDate(t.updatedAt)}</div>
+          </div>
+          <div class="inline">
+            <button class="btn secondary sm" data-open="${t.id}">Open/Edit</button>
+            <button class="btn ok sm" data-goto="${t.id}">Go to</button>
+          </div>
+        `;
+        el.appendChild(row);
+      }
+      el.querySelectorAll("button[data-open]").forEach(b=>{
+        b.addEventListener("click", ()=>{
+          const id = b.getAttribute("data-open");
+          const t = tasks.find(x=>x.id===id);
+          if (!t) return;
+          closeSearchCenter();
+          openTaskModal(t.customerId, t.id);
+        });
+      });
+      el.querySelectorAll("button[data-goto]").forEach(b=>{
+        b.addEventListener("click", ()=> jumpToTaskInMain(b.getAttribute("data-goto")) );
+      });
+    }
+    function updateMatchPointer(){
+      if (currentIdx<0 || currentIdx>=matches.length){
+        elMatchIndex.textContent = ""; elPrevMatch.disabled = true; elNextMatch.disabled = true; return;
+      }
+      elMatchIndex.textContent = `Showing ${currentIdx+1} of ${matches.length}`;
+      elPrevMatch.disabled = (currentIdx<=0); elNextMatch.disabled = (currentIdx>=matches.length-1);
+      const id = matches[currentIdx].id;
+      const row = elSearchResults.querySelector(`.row[data-task-id="${id}"]`);
+      if (row){
+        row.scrollIntoView({block:'nearest'});
+        elSearchResults.querySelectorAll('.row').forEach(r=>r.classList.remove('flash'));
+        row.classList.add('flash'); setTimeout(()=>row.classList.remove('flash'), 800);
+      }
+    }
+    elPrevMatch.addEventListener("click", ()=>{ if (currentIdx>0){ currentIdx--; updateMatchPointer(); }});
+    elNextMatch.addEventListener("click", ()=>{ if (currentIdx<matches.length-1){ currentIdx++; updateMatchPointer(); }});
+    elRunSearch.addEventListener("click", performSearch);
+    elSearchScope.addEventListener("change", performSearch);
+    elSearchCenter.addEventListener("keydown", (e)=>{ if(e.key==="Enter") elRunSearch.click(); if(e.key==="Escape") closeSearchCenter(); if(e.key==="ArrowDown") elNextMatch.click(); if(e.key==="ArrowUp") elPrevMatch.click(); });
+
+    function openSearchCenter(){ elSearchCenter.style.display = "flex"; setMode("name"); elSearchInput.value=""; elSearchScope.value="all"; elStatusChips.forEach(c=>c.classList.remove("active")); elDueFrom.value=""; elDueTo.value=""; setTimeout(()=>elSearchInput.focus(),0); }
+    function closeSearchCenter(){ elSearchCenter.style.display = "none"; }
+    CT.openSearchCenter = openSearchCenter;
+    q("#closeSearchCenter").addEventListener("click", closeSearchCenter);
+
+    /* ===== Export / Backup ===== */
+    function exportCSV(){
+      try{
+        const custRows = [["CustomerID","Customer Name","Mobile Numbers","Created At","Updated At"]];
+        for(const c of customers){ custRows.push([c.id, c.name||"", (c.numbers||[]).join(", "), c.createdAt||"", c.updatedAt||""]); }
+        const taskRows = [["TaskID","CustomerID","Customer Name","Mobile Numbers","Task Description","Due Date","Status","Created At","Updated At"]];
+        for(const t of tasks){
+          const c = customers.find(x=>x.id===t.customerId);
+          taskRows.push([ t.id, t.customerId, c?(c.name||""):"", c?(c.numbers||[]).join(", "):"", t.description||"", t.dueDate||"", t.status||"", t.createdAt||"", t.updatedAt||"" ]);
+        }
+        downloadCSV("Customers.csv", custRows);
+        downloadCSV("Tasks.csv", taskRows);
+        showToast('success','Exported CSV files');
+      }catch(e){ console.error('export', e); showToast('error','Export failed'); }
+    }
+    function downloadCSV(filename, rows){
+      const csv = rows.map(r => r.map(cell => {
+        const s = String(cell??"");
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+      }).join(",")).join("\n");
+      const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 1000);
+    }
+    function backupJSON(){
+      const payload = { version:1, exportedAt: nowISO(), customers, tasks };
+      const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'customer_tasks_backup.json'; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 1000);
+      showToast('success','Backup JSON downloaded');
+    }
+    CT.exportCSV = exportCSV;
+    CT.backupJSON = backupJSON;
+
+    /* ===== Delete Task ===== */
+    function deleteTask(id){
+      const idx = tasks.findIndex(x=>x.id===id);
+      if (idx === -1) return;
+      tasks.splice(idx,1);
+      saveAll();
+      showToast('success','Task deleted');
+    }
+    CT.deleteTask = deleteTask;
+
+    /* ===== Event Delegation for Edit / Next / Restore / Complete / Delete ===== */
+    function cycleStatus(id){
+      const t = tasks.find(x=>x.id===id); if(!t) return;
+      const order = [STATUS.PENDING, STATUS.INPROG, STATUS.ONHOLD, STATUS.CANCELLED];
+      let i = order.indexOf(t.status);
+      if (i === -1) i = 0;
+      t.status = order[(i+1) % order.length];
+      t.updatedAt = nowISO();
+      saveAll();
+      showToast('success', 'Status: ' + t.status);
+    }
+    CT.cycleStatus = cycleStatus;
+
+    elActiveList.addEventListener('click', (e)=>{
+      const editBtn = e.target.closest('button[data-edit]');
+      if (editBtn){ e.preventDefault(); e.stopPropagation(); CT.editTask(editBtn.getAttribute('data-edit')); return; }
+      const nextBtn = e.target.closest('button[data-cycle]');
+      if (nextBtn){ e.preventDefault(); e.stopPropagation(); cycleStatus(nextBtn.getAttribute('data-cycle')); return; }
+      const completeBtn = e.target.closest('button[data-complete]');
+      if (completeBtn){ e.preventDefault(); e.stopPropagation(); CT.markStatus(completeBtn.getAttribute('data-complete'), STATUS.COMPLETED); return; }
+      const delBtn = e.target.closest('button[data-delete]');
+      if (delBtn){
+        e.preventDefault(); e.stopPropagation();
+        const id = delBtn.getAttribute('data-delete');
+        if (confirm('Delete this task? This cannot be undone.')) deleteTask(id);
+        return;
+      }
+    });
+    elCompletedList.addEventListener('click', (e)=>{
+      const editBtn = e.target.closest('button[data-edit]');
+      if (editBtn){ e.preventDefault(); e.stopPropagation(); CT.editTask(editBtn.getAttribute('data-edit')); return; }
+      const restoreBtn = e.target.closest('button[data-restore]');
+      if (restoreBtn){ e.preventDefault(); e.stopPropagation(); CT.markStatus(restoreBtn.getAttribute('data-restore'), STATUS.PENDING); return; }
+      const delBtn = e.target.closest('button[data-delete]');
+      if (delBtn){
+        e.preventDefault(); e.stopPropagation();
+        const id = delBtn.getAttribute('data-delete');
+        if (confirm('Delete this task? This cannot be undone.')) deleteTask(id);
+        return;
+      }
+    });
+
+    // Double-click row to open
+    elActiveList.addEventListener('dblclick', (e)=>{
+      const row = e.target.closest('.row[data-task-id]'); if (row) CT.editTask(row.dataset.taskId);
+    });
+    elCompletedList.addEventListener('dblclick', (e)=>{
+      const row = e.target.closest('.row[data-task-id]'); if (row) CT.editTask(row.dataset.taskId);
+    });
+
+    // Keyboard: Enter opens
+    ['#activeList', '#completedList'].forEach(sel=>{
+      const root = document.querySelector(sel);
+      root.addEventListener('keydown', (e)=>{
+        if (e.key !== 'Enter') return;
+        const row = e.target.closest('.row[data-task-id]');
+        if (row) CT.editTask(row.dataset.taskId);
+      });
+    });
+
+    /* Public shortcuts */
+    CT.openAdd = ()=> openTaskModal(null, null);
+    CT.editTask = id => { const t = tasks.find(x=>x.id===id); if(t) openTaskModal(t.customerId, id); };
+
+    /* Initial render */
+    render();
+  })();
+  </script>
 </body>
 </html>
