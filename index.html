@@ -2,693 +2,614 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Diary (Companion to Tasks)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Diary (Companion)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <style>
     :root{
-      --bg:#0b1020; --panel:#121a35; --panel2:#0f1530; --text:#eaf0ff; --muted:#aab4d6;
-      --border:#1f2a4f; --accent:#5b8cff; --accent2:#74d680; --warn:#ffcc66; --danger:#ff6b6b; --mark:#fff2a8;
+      --bg: #0f172a; --panel: #1e293b; --panel-hover: #334155;
+      --text: #f1f5f9; --muted: #94a3b8; --border: #334155;
+      --accent: #3b82f6; --accent-hover: #2563eb;
+      --success: #10b981; --warn: #f59e0b; --danger: #ef4444;
+      --pro: #6366f1; --pers: #a855f7;
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
     }
     *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#0a0f1f 0%, #0e1430 100%);color:var(--text)}
-    header{position:sticky;top:0;z-index:10;padding:12px;border-bottom:1px solid var(--border);background:rgba(13,18,40,.75);backdrop-filter:blur(6px) saturate(140%)}
-    .container{max-width:1000px;margin:16px auto;padding:0 12px}
-    .hrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    h1{margin:0;font-size:18px}
-    .sub{margin-top:2px;color:var(--muted);font-size:12px}
-    input[type="text"],input[type="date"],textarea,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#0b1433;color:#eaf0ff;outline:none}
-    textarea{min-height:140px}
-    .btn{appearance:none;border:none;border-radius:10px;padding:9px 13px;color:#fff;font-weight:800;cursor:pointer;transition:.15s transform ease,.2s background ease}
-    .btn:hover{transform:translateY(-1px)}
-    .btn.primary{background:linear-gradient(180deg,var(--accent) 0%,#3f69ff 100%)}
-    .btn.secondary{background:#1a2446;border:1px solid var(--border);color:#dfe7ff}
-    .btn.ok{background:linear-gradient(180deg,var(--accent2) 0%,#3fbf74 100%)}
-    .btn.warn{background:linear-gradient(180deg,var(--warn) 0%,#f5b24e 100%);color:#2a1b05}
-    .btn.danger{background:linear-gradient(180deg,var(--danger) 0%,#ff5252 100%)}
-    .btn.sm{padding:6px 10px;font-size:12px}
-    .card{background:linear-gradient(180deg,var(--panel) 0%,var(--panel2) 100%);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
-    .list{margin-top:10px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-    .row{display:flex;gap:12px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer}
-    .row:last-child{border-bottom:none}
-    .row .meta{flex:1;min-width:0}
-    .muted{color:var(--muted);font-size:12px}
-    .small{font-size:12px}
-    .pill{display:inline-block;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:900}
-    .p-linked{background:#1d3b28;color:#9ef0b3}
-    .p-standalone{background:#2c2f41;color:#b9c1ff}
-    .p-important{background:#4b2d09;color:#ffd59a}
-    .p-pro{background:#20345c;color:#bcd6ff}
-    .p-personal{background:#3a2646;color:#e9c6ff}
-    .wa{display:inline-flex;width:22px;height:22px;align-items:center;justify-content:center;background:#1c7c54;border-radius:6px;margin-left:6px}
-    .wa svg{width:14px;height:14px;fill:#fff}
-    .hidden{display:none}
-    .hr{height:1px;background:var(--border);margin:10px 0}
+    body{margin:0;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;padding-bottom:40px}
+    
+    /* Layout & Header */
+    header{position:sticky;top:0;z-index:20;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:10px 16px}
+    .container{max-width:800px;margin:0 auto;padding:16px}
+    .hrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-0.02em}
+    .sub{font-size:12px;color:var(--muted);margin-top:2px}
+    
+    /* Buttons & Inputs */
+    button, select, input, textarea{font-family:inherit;font-size:14px}
+    .btn{appearance:none;border:none;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+    .btn:active{transform:scale(0.97)}
+    .btn.primary{background:var(--accent);color:#fff} .btn.primary:hover{background:var(--accent-hover)}
+    .btn.secondary{background:var(--panel);border:1px solid var(--border);color:var(--text)} .btn.secondary:hover{background:var(--panel-hover)}
+    .btn.ok{background:var(--success);color:#fff}
+    .btn.danger{background:var(--danger);color:#fff}
+    .btn.icon{padding:8px;border-radius:50%}
+    .btn.sm{padding:4px 10px;font-size:12px;height:28px}
+
+    input[type="text"],input[type="date"],textarea,select{
+      width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);
+      background:var(--bg);color:var(--text);outline:none;transition:border-color .2s;
+    }
+    input:focus, textarea:focus, select:focus{border-color:var(--accent)}
+    textarea{min-height:100px;resize:vertical;line-height:1.5}
+    
+    /* Utility Classes */
+    .hidden{display:none !important}
     .inline{display:flex;gap:8px;align-items:center}
     .wrap{flex-wrap:wrap}
     .grow{flex:1}
-    .right{margin-left:auto}
-    @keyframes flash{0%{box-shadow:0 0 0 0 rgba(91,140,255,.9)}100%{box-shadow:0 0 0 12px rgba(91,140,255,0)}}
-    .flash{animation:flash 1s ease-out 0s 1;border-color:#5b8cff !important;background:linear-gradient(180deg,#13204a 0%,#0f1738 100%)}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .hr{height:1px;background:var(--border);margin:12px 0}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)}
+
+    /* Pills & Badges */
+    .pill{padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase}
+    .p-pro{background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3)}
+    .p-pers{background:rgba(168,85,247,0.2);color:#e9d5ff;border:1px solid rgba(168,85,247,0.3)}
+    .p-link{background:rgba(16,185,129,0.2);color:#6ee7b7}
+    .p-imp{background:rgba(245,158,11,0.2);color:#fcd34d}
+
+    /* Menu Dropdown */
+    .menu-wrap{position:relative}
+    .menu-btn{background:transparent;color:var(--text);border:1px solid var(--border)}
+    .menu-dropdown{
+      position:absolute;top:100%;right:0;margin-top:8px;width:200px;
+      background:var(--panel);border:1px solid var(--border);border-radius:8px;
+      box-shadow:0 10px 25px rgba(0,0,0,0.5);display:none;flex-direction:column;overflow:hidden;z-index:50;
+    }
+    .menu-wrap.open .menu-dropdown{display:flex}
+    .menu-item{padding:10px 14px;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);font-size:13px}
+    .menu-item:hover{background:var(--panel-hover)}
+    .menu-item:last-child{border-bottom:none}
+
+    /* List & Timeline */
+    .date-header{
+      position:sticky; top:65px; z-index:15;
+      background:var(--bg); padding:8px 0; font-size:13px; font-weight:700; color:var(--muted);
+      border-bottom:1px solid var(--border); margin:20px 0 10px 0; display:flex; align-items:center; gap:8px;
+    }
+    .date-header::after{content:'';flex:1;height:1px;background:var(--border)}
+    
+    .entry{
+      position:relative; padding:14px; border-radius:8px; border:1px solid var(--border);
+      background:rgba(30,41,59,0.5); margin-bottom:10px; cursor:pointer; transition:all .2s;
+    }
+    .entry:hover{background:var(--panel);border-color:var(--accent)}
+    .entry.important{border-left:3px solid var(--warn)}
+    
+    .entry-body{font-size:14px;color:#cbd5e1;margin-top:6px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+    /* Simple Markdown Styling in List */
+    .md-bold{font-weight:700;color:#fff}
+    .md-list{display:block;padding-left:10px;border-left:2px solid var(--border);margin:4px 0}
+    
+    /* Quick Add Accordion */
+    details.qa-box{margin-bottom:16px;border:1px solid var(--border);border-radius:8px;background:var(--panel);overflow:hidden}
+    details.qa-box summary{padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px;list-style:none;display:flex;align-items:center;justify-content:space-between}
+    details.qa-box summary::-webkit-details-marker{display:none}
+    details.qa-box summary::after{content:'+';font-size:16px;font-weight:bold}
+    details.qa-box[open] summary::after{content:'-'}
+    details.qa-box[open] summary{border-bottom:1px solid var(--border)}
+    .qa-content{padding:12px}
+
     /* Modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50}
-    .modal{width:min(860px,96vw);max-height:92vh;overflow:auto;background:#0e1430;border:1px solid var(--border);border-radius:14px;padding:14px}
-    .modal h3{margin:0 0 10px 0}
-    /* Toasts */
-    #toaster{position:fixed;right:12px;bottom:12px;display:flex;flex-direction:column;gap:8px;z-index:9999}
-    .toast{min-width:240px;max-width:420px;padding:9px 12px;border-radius:10px;color:#fff;font-weight:700;box-shadow:0 10px 20px rgba(0,0,0,.25)}
-    .toast.info{background:#2b4a9e}.toast.success{background:#2a7a47}.toast.error{background:#a33a3a}
-    .toast button{background:transparent;border:none;color:#fff;margin-left:6px;cursor:pointer;font-weight:900}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(2px);z-index:100;display:none;align-items:center;justify-content:center;padding:12px}
+    .modal{width:100%;max-width:600px;background:#1e293b;border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);display:flex;flex-direction:column;max-height:90vh}
+    .modal-head{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .modal-body{padding:16px;overflow-y:auto}
+    .modal-foot{padding:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:rgba(15,23,42,0.3)}
+
+    /* Toast */
+    #toaster{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px}
+    .toast{background:var(--panel);border-left:4px solid var(--accent);padding:12px 16px;border-radius:4px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.5);font-size:14px;animation:slideIn 0.3s ease}
+    @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
   </style>
 </head>
 <body>
-  <header>
-    <div class="hrow">
-      <div class="grow">
-        <h1>Diary</h1>
-        <div class="sub">Standalone notes or link to Tasks. Uses the same storage as your Tasks app.</div>
-      </div>
-      <button class="btn secondary sm" onclick="D && D.importJSON()">Import JSON</button>
-      <button class="btn secondary sm" onclick="D && D.exportCSV()">Export CSV</button>
-      <button class="btn secondary sm" onclick="D && D.backupJSON()">Backup</button>
-      <!-- New TXT rollup buttons -->
-      <button class="btn secondary sm" onclick="D && D.exportTXT('all')">TXT (All to date)</button>
-      <button class="btn secondary sm" onclick="D && D.exportTXT('professional')">TXT (Pro to date)</button>
-      <button class="btn secondary sm" onclick="D && D.exportTXT('personal')">TXT (Personal to date)</button>
-      <button class="btn primary" onclick="D && D.openEntry()">Add Entry</button>
-    </div>
-  </header>
 
-  <div class="container">
-    <div class="card">
-      <div class="inline wrap">
-        <input id="search" class="grow" type="text" placeholder="Search title/body/tags…">
-        <button id="filterAll" class="btn secondary sm">All</button>
-        <button id="filterImp" class="btn secondary sm">Important</button>
-        <select id="linkFilter" class="btn secondary sm" style="padding:6px 10px">
-          <option value="all">Linked: All</option>
-          <option value="linked">Linked only</option>
-          <option value="standalone">Standalone only</option>
-        </select>
-        <!-- New type filter -->
-        <select id="typeFilter" class="btn secondary sm" style="padding:6px 10px">
-          <option value="any">Type: Any</option>
-          <option value="professional">Professional</option>
-          <option value="personal">Personal</option>
-        </select>
-        <div class="right small muted" id="dataStatus"></div>
+<header>
+  <div class="container hrow" style="padding:0">
+    <div>
+      <h1>Diary</h1>
+      <div class="sub">Companion to Tasks</div>
+    </div>
+    <div class="inline">
+      <button class="btn primary" onclick="D.openEntry()">+ New</button>
+      
+      <div class="menu-wrap" id="mainMenu">
+        <button class="btn secondary icon" onclick="this.parentElement.classList.toggle('open')">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </button>
+        <div class="menu-dropdown">
+          <button class="menu-item" onclick="D.exportTXT('all')">Export All TXT</button>
+          <button class="menu-item" onclick="D.exportTXT('professional')">Export Pro TXT</button>
+          <button class="menu-item" onclick="D.exportTXT('personal')">Export Personal TXT</button>
+          <button class="menu-item" onclick="D.exportCSV()">Export CSV</button>
+          <button class="menu-item" onclick="D.backupJSON()">Backup Data</button>
+          <button class="menu-item" onclick="D.importJSON()">Import Backup</button>
+        </div>
       </div>
-      <div class="hr"></div>
-      <div class="inline wrap" style="gap:8px">
-        <input id="qaTitle" class="grow" type="text" placeholder="Quick add title…">
-        <input id="qaTags" class="grow" type="text" placeholder="tags (comma)…">
-        <label class="inline" style="gap:6px"><input id="qaImportant" type="checkbox"> Important</label>
-        <!-- Quick Add type -->
-        <select id="qaType" class="btn secondary sm" style="padding:6px 10px">
-          <option value="professional">Professional</option>
-          <option value="personal">Personal</option>
-        </select>
-        <button id="qaSave" class="btn ok">Quick Save</button>
-      </div>
-      <div class="hr"></div>
-      <div id="list" class="list"></div>
     </div>
   </div>
+</header>
 
-  <!-- Diary Modal -->
-  <div id="entryModal" class="modal-backdrop">
-    <div class="modal">
-      <h3 id="modalTitle">Add Entry</h3>
-      <div class="small muted" id="linkState" style="margin:0 0 8px"></div>
-      <div class="inline wrap" style="gap:12px">
-        <div style="min-width:150px">
-          <label>Date</label>
+<div class="container">
+
+  <div class="inline wrap" style="margin-bottom:16px">
+    <input id="search" class="grow" type="text" placeholder="Search entries..." style="background:var(--panel);border-color:transparent">
+    <select id="typeFilter" class="btn secondary sm" style="width:auto">
+      <option value="any">All Types</option>
+      <option value="professional">Professional</option>
+      <option value="personal">Personal</option>
+    </select>
+    <button id="filterImp" class="btn secondary sm" data-active="false" onclick="D.toggleImp(this)">★ Only</button>
+  </div>
+
+  <details class="qa-box">
+    <summary>Quick Add</summary>
+    <div class="qa-content">
+      <div class="inline wrap" style="gap:8px; margin-bottom:8px">
+        <input id="qaTitle" class="grow" type="text" placeholder="Title...">
+        <select id="qaType" style="width:auto; min-width:100px">
+          <option value="professional">Pro</option>
+          <option value="personal">Pers</option>
+        </select>
+      </div>
+      <div class="inline wrap" style="gap:8px">
+        <input id="qaTags" class="grow" type="text" placeholder="#tags...">
+        <button id="qaSave" class="btn ok">Add Note</button>
+      </div>
+    </div>
+  </details>
+
+  <div id="dataStatus" class="sub" style="margin-bottom:10px; text-align:right"></div>
+  
+  <div id="list"></div>
+  
+  <div style="height:100px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:12px">
+    &mdash; End of Diary &mdash;
+  </div>
+</div>
+
+<div id="entryModal" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle" style="margin:0">Entry</h3>
+      <button class="btn secondary sm" onclick="D.closeEntry()">Esc</button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="inline wrap" style="gap:10px; margin-bottom:12px">
+        <div style="flex:1">
+          <label class="small muted">Date</label>
           <input id="enDate" type="date">
         </div>
-        <div class="grow">
-          <label>Title</label>
-          <input id="enTitle" type="text" placeholder="Title (e.g., Customer arrived from abroad)">
-        </div>
-        <!-- Entry Type -->
-        <div style="min-width:170px">
-          <label>Type</label>
+        <div style="flex:1">
+          <label class="small muted">Type</label>
           <select id="enType">
             <option value="professional">Professional</option>
             <option value="personal">Personal</option>
           </select>
         </div>
       </div>
-      <div class="inline wrap" style="gap:12px; margin-top:8px">
-        <div class="grow">
-          <label>Tags (comma)</label>
-          <input id="enTags" type="text" placeholder="arrival, follow-up">
-        </div>
-        <label class="inline" style="gap:6px; margin-top:22px"><input id="enImportant" type="checkbox"> Important</label>
-      </div>
-      <div class="hr"></div>
-      <label>Body</label>
-      <textarea id="enBody" placeholder="Write details here…"></textarea>
 
-      <div class="hr"></div>
-      <div class="inline wrap" style="gap:12px">
-        <div class="grow">
-          <label>Link to Task (optional)</label>
-          <select id="enTaskLink"></select>
-          <div class="small muted" id="enTaskMeta" style="margin-top:6px"></div>
-        </div>
-        <button id="prefillFromTask" class="btn warn sm" title="Copy details from selected task">Prefill</button>
+      <div style="margin-bottom:12px">
+        <input id="enTitle" type="text" placeholder="Title (e.g. Meeting with...)" style="font-weight:bold; font-size:16px">
+      </div>
+      
+      <div class="inline" style="margin-bottom:12px; gap:8px">
+        <input id="enTags" type="text" placeholder="Tags (comma separated)...">
+        <label class="btn secondary sm" style="cursor:pointer; user-select:none">
+          <input id="enImportant" type="checkbox" style="width:auto;margin:0 4px 0 0"> ★
+        </label>
       </div>
 
-      <div class="hr"></div>
-      <div class="inline wrap">
-        <div class="inline" style="gap:8px">
-          <button id="saveBtn" class="btn ok">Save</button>
-          <button id="cancelBtn" class="btn secondary">Cancel</button>
+      <div style="margin-bottom:12px">
+        <textarea id="enBody" placeholder="Write your notes here..." oninput="D.autoGrow(this)"></textarea>
+      </div>
+
+      <div class="card" style="padding:10px; background:rgba(0,0,0,0.2)">
+        <div class="inline" style="justify-content:space-between; margin-bottom:6px">
+          <span class="small muted">Link to Task (Optional)</span>
+          <button id="prefillFromTask" class="btn secondary sm" style="padding:2px 8px">Copy Task Info</button>
         </div>
-        <div class="right inline" style="gap:8px">
-          <button id="shareBtn" class="btn secondary sm">Share/Save .txt</button>
-          <button id="emailBtn" class="btn secondary sm">Email</button>
-          <button id="deleteBtn" class="btn danger sm hidden">Delete</button>
-          <div class="small muted" id="timestamps"></div>
-        </div>
+        <select id="enTaskLink" style="font-size:12px"></select>
+        <div id="enTaskMeta" class="small muted" style="margin-top:6px; font-style:italic"></div>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <div class="inline">
+        <button id="deleteBtn" class="btn danger sm hidden">Delete</button>
+        <button id="shareBtn" class="btn secondary sm">TXT</button>
+        <button id="emailBtn" class="btn secondary sm">Email</button>
+      </div>
+      <div class="inline">
+        <button class="btn secondary" onclick="D.closeEntry()">Cancel</button>
+        <button id="saveBtn" class="btn primary">Save Entry</button>
       </div>
     </div>
   </div>
+</div>
 
-  <input id="jsonFile" type="file" accept="application/json" class="hidden"/>
+<input id="jsonFile" type="file" accept="application/json" class="hidden"/>
+<div id="toaster"></div>
 
-  <div id="toaster"></div>
+<script>
+(function(){
+  'use strict';
+  const D = window.D = {};
 
-  <script>
-  (function(){
-    'use strict';
-    const D = window.D = {};
+  // Config
+  const EMAIL_PRO = "diary4mathew@gmail.com";
+  const EMAIL_PERSONAL = "mathewfederal3@hotmail.com";
+  
+  // Storage Keys (Preserved from previous version)
+  const LS = { C: "ct_customers_v1", T: "ct_tasks_v1", L: "ct_leads_v1", D: "ct_diary_v1" };
 
-    /* ===== Config (emails & defaults) ===== */
-    const EMAIL_PRO = "diary4mathew@gmail.com";
-    const EMAIL_PERSONAL = "mathewfederal3@hotmail.com";
-    const DEFAULT_TYPE = "professional"; // used for old entries that don't have a type
+  // Utils
+  const q = s => document.querySelector(s);
+  const uuid = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const nowISO = () => new Date().toISOString();
+  const todayISO = () => nowISO().slice(0,10);
+  const fmtDate = d => new Date(d).toLocaleDateString(undefined, {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+  
+  // State
+  let data = { C:[], T:[], L:[], D:[] };
+  let editingId = null;
+  let showImpOnly = false;
 
-    /* ===== Utils ===== */
-    const q = sel => document.querySelector(sel);
-    const qAll = sel => Array.from(document.querySelectorAll(sel));
-    const nowISO = () => new Date().toISOString();
-    const todayISODate = () => new Date().toISOString().slice(0,10); // YYYY-MM-DD
-    const fmtDate = d => d ? new Date(d).toLocaleString() : "";
-    const escapeHtml = s => String(s??"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c] || c));
-    const uuid = ()=> ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c/4).toString(16));
-    const normalizeDigits = s => (s||"").replace(/[^\d]/g,"");
-    const waHref = raw=>{
-      let d = normalizeDigits(raw||"");
-      if(d.startsWith('00')) d = d.slice(2);
-      return d ? `https://wa.me/${d}` : '#';
-    };
-    const getType = (e) => (e && e.etype) ? e.etype : DEFAULT_TYPE; // "professional" | "personal"
+  // Load Data
+  function loadAll(){
+    data.C = JSON.parse(localStorage.getItem(LS.C) || "[]");
+    data.T = JSON.parse(localStorage.getItem(LS.T) || "[]");
+    data.L = JSON.parse(localStorage.getItem(LS.L) || "[]");
+    data.D = JSON.parse(localStorage.getItem(LS.D) || "[]");
+    renderList();
+  }
+  function saveAll(){
+    localStorage.setItem(LS.C, JSON.stringify(data.C));
+    localStorage.setItem(LS.T, JSON.stringify(data.T));
+    localStorage.setItem(LS.L, JSON.stringify(data.L));
+    localStorage.setItem(LS.D, JSON.stringify(data.D));
+    renderList();
+  }
 
-    /* ===== Toasts ===== */
-    const elToaster = q('#toaster');
-    function toast(type, msg, ms=2500){
-      try{
-        const el = document.createElement('div');
-        el.className = `toast ${type}`;
-        el.innerHTML = `<span>${escapeHtml(msg)}</span><button onclick="this.parentElement.remove()">✕</button>`;
-        elToaster.appendChild(el);
-        setTimeout(()=>{ el.remove(); }, ms);
-      }catch(e){ alert(msg); }
-    }
+  // Toast
+  function toast(msg, type='info'){
+    const t = document.createElement('div');
+    t.className = 'toast';
+    if(type==='error') t.style.borderLeftColor = 'var(--danger)';
+    if(type==='success') t.style.borderLeftColor = 'var(--success)';
+    t.textContent = msg;
+    q('#toaster').appendChild(t);
+    setTimeout(()=>t.remove(), 3000);
+  }
 
-    /* ===== Storage (same keys as Tasks app) ===== */
-    const LS_CUSTOMERS = "ct_customers_v1";
-    const LS_TASKS = "ct_tasks_v1";
-    const LS_LEADS = "ct_leads_v1";
-    const LS_DIARY = "ct_diary_v1";
+  // Markdown Formatter (Simple)
+  function renderMarkdown(text){
+    if(!text) return '';
+    let html = text
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") // Escape HTML
+      .replace(/\*\*(.*?)\*\*/g, '<span class="md-bold">$1</span>') // Bold
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
+      .replace(/- (.*?)(\n|$)/g, '<span class="md-list">• $1</span>'); // Lists
+    return html.replace(/\n/g, '<br>');
+  }
 
-    let customers = load(LS_CUSTOMERS, []);
-    let tasks = load(LS_TASKS, []);
-    let leads = load(LS_LEADS, []);
-    let diary = load(LS_DIARY, []);
-
-    function load(key, fallback){
-      try{ const s = localStorage.getItem(key); return s ? JSON.parse(s) : fallback; }
-      catch(e){ console.warn('load', key, e); return fallback; }
-    }
-    function saveAll(){
-      try{
-        localStorage.setItem(LS_CUSTOMERS, JSON.stringify(customers));
-        localStorage.setItem(LS_TASKS, JSON.stringify(tasks));
-        localStorage.setItem(LS_LEADS, JSON.stringify(leads));
-        localStorage.setItem(LS_DIARY, JSON.stringify(diary));
-        render();
-      }catch(e){ console.error('saveAll', e); }
-    }
-
-    /* ===== UI state ===== */
-    let showImportantOnly = false;
-    let typeFilter = 'any'; // any | professional | personal
+  // Render List
+  function renderList(){
     const elList = q('#list');
-    const elSearch = q('#search');
-    const elLinkFilter = q('#linkFilter');
-    const elTypeFilter = q('#typeFilter');
-    const elDataStatus = q('#dataStatus');
+    elList.innerHTML = '';
+    
+    // Status
+    q('#dataStatus').textContent = `Entries: ${data.D.length} • Tasks: ${data.T.length}`;
 
-    function render(){
-      // Data status
-      const have = {
-        C: customers.length, T: tasks.length, L: leads.length, D: diary.length
-      };
-      elDataStatus.textContent = `Data: Cust ${have.C} • Tasks ${have.T} • Leads ${have.L} • Diary ${have.D}`;
+    // Filters
+    const term = q('#search').value.toLowerCase();
+    const typeF = q('#typeFilter').value;
+    
+    let pool = data.D.slice().sort((a,b) => (b.date||"") .localeCompare(a.date||"") || (b.createdAt||"").localeCompare(a.createdAt||""));
 
-      // Render list
-      const term = (elSearch.value||"").toLowerCase().trim();
-      const linkMode = elLinkFilter.value; // all | linked | standalone
-      typeFilter = elTypeFilter.value;
+    if(showImpOnly) pool = pool.filter(e => e.important);
+    if(typeF !== 'any') pool = pool.filter(e => (e.etype||'professional') === typeF);
+    if(term) pool = pool.filter(e => (e.title+e.body+e.tags.join('')).toLowerCase().includes(term));
 
-      elList.innerHTML = "";
-      let pool = diary.slice();
-      if (showImportantOnly) pool = pool.filter(e=>!!e.important);
-      if (linkMode==='linked') pool = pool.filter(e=>!!e.linkTaskId);
-      if (linkMode==='standalone') pool = pool.filter(e=>!e.linkTaskId);
-      if (typeFilter!=='any') pool = pool.filter(e=> getType(e)===typeFilter);
-      if (term){
-        pool = pool.filter(e=>{
-          const s = (e.title||"")+" "+(e.body||"")+" "+(e.tags||[]).join(" ");
-          return s.toLowerCase().includes(term);
-        });
+    let lastDate = null;
+    const today = todayISO();
+    const yest = new Date(Date.now() - 864e5).toISOString().slice(0,10);
+
+    if(pool.length === 0){
+      elList.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted)">No entries found.</div>`;
+      return;
+    }
+
+    pool.forEach(e => {
+      // Date Header Logic
+      const dRaw = e.date || e.createdAt.slice(0,10);
+      if(dRaw !== lastDate){
+        const head = document.createElement('div');
+        head.className = 'date-header';
+        let label = fmtDate(dRaw);
+        if(dRaw === today) label = "Today";
+        if(dRaw === yest) label = "Yesterday";
+        head.innerHTML = `<span>${label}</span>`;
+        elList.appendChild(head);
+        lastDate = dRaw;
       }
-      pool.sort((a,b)=> new Date(b.updatedAt||b.createdAt) - new Date(a.updatedAt||a.createdAt));
 
-      if (!pool.length){
-        elList.innerHTML = `<div class="row"><div class="meta">No diary entries.</div><button class="btn primary sm" onclick="D.openEntry()">Add Entry</button></div>`;
-        return;
-      }
+      // Card
+      const div = document.createElement('div');
+      div.className = `entry ${e.important?'important':''}`;
+      div.onclick = (ev) => { if(!ev.target.closest('a')) D.openEntry(e.id); };
+      
+      const typeLabel = (e.etype||'professional') === 'professional' ? 'PRO' : 'PERS';
+      const typeClass = (e.etype||'professional') === 'professional' ? 'p-pro' : 'p-pers';
+      const linkedTask = e.linkTaskId ? data.T.find(t=>t.id===e.linkTaskId) : null;
 
-      for (const e of pool){
-        const linked = !!e.linkTaskId;
-        const t = linked ? tasks.find(x=>x.id===e.linkTaskId) : null;
-        const c = t ? customers.find(x=>x.id===t.customerId) : null;
-        const num = c && (c.numbers||[])[0] ? String(c.numbers[0]) : "";
-        const wa = num ? `
-          <a class="wa" href="${waHref(num)}" target="_blank" onclick="event.stopPropagation()" title="WhatsApp ${escapeHtml(num)}">
-            <svg viewBox="0 0 32 32"><path d="M19.11 17.23c-.27-.13-1.6-.79-1.85-.88-.25-.09-.43-.13-.62.13-.18.27-.71.88-.87 1.06-.16.18-.32.2-.6.07-.27-.13-1.14-.42-2.17-1.33-.8-.71-1.34-1.59-1.5-1.86-.16-.27-.02-.41.11-.54.11-.11.27-.29.4-.45.13-.16.18-.27.27-.45.09-.18.04-.34-.02-.47-.07-.13-.62-1.49-.85-2.05-.22-.53-.45-.46-.62-.46-.16 0-.34-.02-.52-.02-.18 0-.47.07-.71.34-.25.27-.96.94-.96 2.29 0 1.35.98 2.65 1.11 2.83.13.18 1.93 2.95 4.68 4.14.65.28 1.16.45 1.56.57.65.21 1.24.18 1.71.11.52-.08 1.6-.65 1.82-1.29.22-.65.22-1.2.16-1.31-.07-.11-.25-.18-.52-.31zM16.02 5.33c-5.9 0-10.68 4.77-10.68 10.68 0 1.88.49 3.72 1.41 5.34L5 27l5.79-1.52c1.58.86 3.37 1.31 5.18 1.31h.01c5.9 0 10.68-4.77 10.68-10.68 0-2.85-1.11-5.53-3.13-7.55-2.02-2.02-4.7-3.23-7.55-3.23z"/></svg>
-          </a>` : "";
-
-        const typePill = getType(e)==='professional'
-          ? `<span class="pill p-pro" style="margin-left:8px">Pro</span>`
-          : `<span class="pill p-personal" style="margin-left:8px">Personal</span>`;
-
-        const row = document.createElement('div');
-        row.className = 'row';
-        row.dataset.entryId = e.id;
-        row.tabIndex = 0;
-        row.innerHTML = `
-          <div class="meta">
-            <div class="inline">
-              <strong>${escapeHtml(e.title||'(no title)')}</strong>
-              ${e.important?`<span class="pill p-important" style="margin-left:8px">Important</span>`:""}
-              ${typePill}
-              ${linked?`<span class="pill p-linked" style="margin-left:8px">Linked</span>`:`<span class="pill p-standalone" style="margin-left:8px">Standalone</span>`}
-            </div>
-            <div class="muted small" style="margin-top:4px">
-              ${escapeHtml((e.tags||[]).join(", "))} • Type: ${escapeHtml(getType(e))} • Date: ${escapeHtml(e.date||"")} • Created: ${fmtDate(e.createdAt)} • Updated: ${fmtDate(e.updatedAt)}
-              ${linked && c?` • Customer: ${escapeHtml(c.name||"")} ${num?`• ${escapeHtml(num)}`:""}`:""}
-            </div>
+      div.innerHTML = `
+        <div class="inline" style="justify-content:space-between">
+          <div class="inline">
+            <span class="pill ${typeClass}">${typeLabel}</span>
+            ${e.important ? '<span class="pill p-imp">IMP</span>' : ''}
+            ${linkedTask ? '<span class="pill p-link">LINKED</span>' : ''}
+            <strong style="font-size:15px">${e.title || '(No Title)'}</strong>
           </div>
-          ${wa?`<div class="inline">${wa}</div>`:""}
-        `;
-        elList.appendChild(row);
-      }
-    }
+          <div class="small muted">${(e.tags||[]).join(', ')}</div>
+        </div>
+        ${e.body ? `<div class="entry-body">${renderMarkdown(e.body)}</div>` : ''}
+      `;
+      elList.appendChild(div);
+    });
+  }
 
-    /* ===== Header filters/search ===== */
-    q('#filterAll').addEventListener('click', ()=>{ showImportantOnly=false; render(); });
-    q('#filterImp').addEventListener('click', ()=>{ showImportantOnly=true; render(); });
-    elSearch.addEventListener('input', render);
-    elLinkFilter.addEventListener('change', render);
-    elTypeFilter.addEventListener('change', render);
-
-    /* ===== Entry modal ===== */
-    const elEntryModal = q('#entryModal');
-    const elModalTitle = q('#modalTitle');
-    const elLinkState = q('#linkState');
-    const elEnDate = q('#enDate');
-    const elEnTitle = q('#enTitle');
-    const elEnTags = q('#enTags');
-    const elEnImportant = q('#enImportant');
-    const elEnBody = q('#enBody');
-    const elEnTaskLink = q('#enTaskLink');
-    const elEnTaskMeta = q('#enTaskMeta');
-    const elPrefillFromTask = q('#prefillFromTask');
-    const elSaveBtn = q('#saveBtn');
-    const elCancelBtn = q('#cancelBtn');
-    const elDeleteBtn = q('#deleteBtn');
-    const elShareBtn = q('#shareBtn');
-    const elEmailBtn = q('#emailBtn');
-    const elTimestamps = q('#timestamps');
-    const elEnType = q('#enType');
-    let editingId = null;
-
-    function populateTaskSelect(){
-      elEnTaskLink.innerHTML = '<option value="">-- none (standalone) --</option>';
-      const pool = tasks.slice().sort((a,b)=> new Date(b.updatedAt||b.createdAt) - new Date(a.updatedAt||a.createdAt));
-      for (const t of pool){
-        const c = customers.find(x=>x.id===t.customerId);
-        const opt = document.createElement('option');
-        opt.value = t.id;
-        opt.textContent = `${c?c.name:'(customer)'} — ${t.description?.slice(0,40)||'(task)'} (${t.status})`;
-        elEnTaskLink.appendChild(opt);
-      }
-    }
-    function updateLinkMeta(){
-      const id = elEnTaskLink.value;
-      if (!id){
-        elEnTaskMeta.textContent = 'Standalone note (not linked to a task).';
-        elLinkState.textContent = 'Standalone';
-        return;
-      }
-      const t = tasks.find(x=>x.id===id);
-      if (!t){ elEnTaskMeta.textContent='(task missing)'; elLinkState.textContent='Linked (missing)'; return; }
-      const c = customers.find(x=>x.id===t.customerId);
-      elEnTaskMeta.textContent = `Linked to: ${c?c.name:'(customer)'} • ${t.description||'(no desc)'} • Status: ${t.status}`;
-      elLinkState.textContent = 'Linked';
-    }
-    elEnTaskLink.addEventListener('change', updateLinkMeta);
-
-    function openEntry(id=null){
-      editingId = id;
-      populateTaskSelect();
-      if (id){
-        const e = diary.find(x=>x.id===id);
-        elModalTitle.textContent = 'Edit Entry';
-        elEnDate.value = e?.date || todayISODate();
-        elEnTitle.value = e?.title || '';
-        elEnTags.value = (e?.tags||[]).join(', ');
-        elEnImportant.checked = !!e?.important;
-        elEnBody.value = e?.body || '';
-        elEnTaskLink.value = e?.linkTaskId || '';
-        elEnType.value = getType(e);
-        updateLinkMeta();
-        elTimestamps.textContent = `Created: ${fmtDate(e.createdAt)} • Updated: ${fmtDate(e.updatedAt)}`;
-        elDeleteBtn.classList.remove('hidden');
-      }else{
-        elModalTitle.textContent = 'Add Entry';
-        elEnDate.value = todayISODate();
-        elEnTitle.value = '';
-        elEnTags.value = '';
-        elEnImportant.checked = false;
-        elEnBody.value = '';
-        elEnTaskLink.value = '';
-        elEnType.value = DEFAULT_TYPE;
-        updateLinkMeta();
-        elTimestamps.textContent = '';
-        elDeleteBtn.classList.add('hidden');
-      }
-      elEntryModal.style.display = 'flex';
-      setTimeout(()=>elEnTitle.focus(),0);
-    }
-    function closeEntry(){ elEntryModal.style.display = 'none'; }
-    D.openEntry = openEntry;
-
-    // Prefill from selected task
-    elPrefillFromTask.addEventListener('click', ()=>{
-      const id = elEnTaskLink.value;
-      if (!id){ toast('info','Select a task first'); return; }
-      const t = tasks.find(x=>x.id===id); if (!t){ toast('error','Task missing'); return; }
-      const c = customers.find(x=>x.id===t.customerId);
-      const today = todayISODate();
-      const name = c?.name || '';
-      const num = (c?.numbers||[])[0] || '';
-      const title = `${name}${name&&num?' — ':''}${num}`.trim() || '(untitled)';
-      const details = [
-        elEnBody.value ? elEnBody.value : (t.description||''),
-        elEnBody.value ? '' : '',
-        '--- Task Details ---',
-        `Customer: ${name}`,
-        `Numbers: ${(c?.numbers||[]).join(', ')}`,
-        `Status: ${t.status||''}`,
-        `Due Date: ${t.dueDate||''}`
-      ].join('\n');
-      elEnDate.value = today;
-      if (!elEnTitle.value) elEnTitle.value = title;
-      elEnBody.value = details;
-      toast('success','Prefilled from task');
+  // Modal Logic
+  D.openEntry = (id=null) => {
+    editingId = id;
+    const m = q('#entryModal');
+    const modalTitle = q('#modalTitle');
+    
+    // Populate Task Select
+    const sel = q('#enTaskLink');
+    sel.innerHTML = '<option value="">-- No Link --</option>';
+    // Sort tasks by recent
+    const tasks = data.T.slice().sort((a,b)=> (b.updatedAt||"").localeCompare(a.updatedAt||""));
+    tasks.forEach(t => {
+      const c = data.C.find(x => x.id === t.customerId);
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${c ? c.name.substring(0,15) : 'Unknown'} - ${t.description.substring(0,30)}...`;
+      sel.appendChild(opt);
     });
 
-    elSaveBtn.addEventListener('click', ()=>{
-      const d = elEnDate.value || todayISODate();
-      const title = (elEnTitle.value||'').trim();
-      const tags = (elEnTags.value||'').split(',').map(s=>s.trim()).filter(Boolean);
-      const imp = !!elEnImportant.checked;
-      const body = elEnBody.value||'';
-      const link = elEnTaskLink.value || '';
-      const etype = elEnType.value || DEFAULT_TYPE;
-      if (editingId){
-        const e = diary.find(x=>x.id===editingId); if (!e) return;
-        e.date=d; e.title=title; e.tags=tags; e.important=imp; e.body=body; e.linkTaskId=link||null; e.etype=etype; e.updatedAt=nowISO();
-      }else{
-        diary.push({ id: uuid(), date:d, title, tags, important:imp, body, linkTaskId: link||null, etype, createdAt: nowISO(), updatedAt: nowISO() });
-      }
-      saveAll(); closeEntry(); toast('success','Entry saved');
-    });
-    elCancelBtn.addEventListener('click', closeEntry);
-    elDeleteBtn.addEventListener('click', ()=>{
-      if (!editingId) return;
-      if (!confirm('Delete this entry? This cannot be undone.')) return;
-      const idx = diary.findIndex(x=>x.id===editingId);
-      if (idx!==-1) diary.splice(idx,1);
-      saveAll(); closeEntry(); toast('success','Entry deleted');
-    });
-
-    function entryToText(e){
-      const tags = (e.tags||[]).join(', ');
-      const lines = [
-        `Date: ${e.date||''}`,
-        `Title: ${e.title||''}`,
-        `Type: ${getType(e)}`,
-        `Tags: ${tags}`,
-        `Important: ${e.important?'Yes':'No'}`,
-        `Linked: ${e.linkTaskId ? 'Yes' : 'No'}`,
-        ''
-      ];
-      if (e.body) lines.push(e.body, '');
-      if (e.linkTaskId){
-        const t = tasks.find(x=>x.id===e.linkTaskId);
-        if (t){
-          const c = customers.find(x=>x.id===t.customerId);
-          lines.push('--- Task Details ---');
-          lines.push(`Customer: ${c?c.name:''}`);
-          lines.push(`Numbers: ${c?(c.numbers||[]).join(', '):''}`);
-          lines.push(`Status: ${t.status||''}`);
-          lines.push(`Due Date: ${t.dueDate||''}`);
-          lines.push(`Task Description: ${t.description||''}`);
-          lines.push('');
-        }
-      }
-      return lines.join('\n');
+    if(id){
+      const e = data.D.find(x=>x.id===id);
+      modalTitle.textContent = "Edit Entry";
+      q('#enDate').value = e.date || todayISO();
+      q('#enType').value = e.etype || 'professional';
+      q('#enTitle').value = e.title || '';
+      q('#enTags').value = (e.tags||[]).join(', ');
+      q('#enImportant').checked = !!e.important;
+      q('#enBody').value = e.body || '';
+      q('#enTaskLink').value = e.linkTaskId || '';
+      q('#deleteBtn').classList.remove('hidden');
+    } else {
+      modalTitle.textContent = "New Entry";
+      q('#enDate').value = todayISO();
+      q('#enType').value = 'professional';
+      q('#enTitle').value = '';
+      q('#enTags').value = '';
+      q('#enImportant').checked = false;
+      q('#enBody').value = '';
+      q('#enTaskLink').value = '';
+      q('#deleteBtn').classList.add('hidden');
     }
+    
+    updateTaskMeta();
+    D.autoGrow(q('#enBody'));
+    m.style.display = 'flex';
+  };
 
-    async function shareTxt(filename, text){
-      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
-      try{
-        const file = new File([blob], filename, {type: blob.type});
-        if (navigator.canShare && navigator.canShare({ files: [file] })){
-          await navigator.share({ files: [file], title: filename, text: 'Diary export' });
-          return;
-        }
-      }catch(e){}
-      try{
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = filename; a.target = '_blank'; a.click();
-        setTimeout(()=>URL.revokeObjectURL(url), 2000);
-        return;
-      }catch(e){}
-      const hinted = 'data:text/plain;charset=utf-8;name=' + encodeURIComponent(filename) + ',' + encodeURIComponent(text);
-      window.location.href = hinted;
+  D.closeEntry = () => { q('#entryModal').style.display = 'none'; };
+  D.autoGrow = (el) => { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; };
+
+  // Linking Meta
+  function updateTaskMeta(){
+    const tid = q('#enTaskLink').value;
+    const div = q('#enTaskMeta');
+    if(!tid) { div.textContent = ''; return; }
+    const t = data.T.find(x=>x.id===tid);
+    if(!t) { div.textContent = 'Task not found'; return; }
+    const c = data.C.find(x=>x.id===t.customerId);
+    div.textContent = `Customer: ${c?c.name:'N/A'} • Status: ${t.status} • Due: ${t.dueDate||'N/A'}`;
+  }
+  q('#enTaskLink').onchange = updateTaskMeta;
+
+  // Actions
+  q('#saveBtn').onclick = () => {
+    const title = q('#enTitle').value.trim();
+    if(!title) return toast('Title required', 'error');
+    
+    const entry = {
+      id: editingId || uuid(),
+      date: q('#enDate').value,
+      title: title,
+      etype: q('#enType').value,
+      tags: q('#enTags').value.split(',').map(s=>s.trim()).filter(Boolean),
+      important: q('#enImportant').checked,
+      body: q('#enBody').value,
+      linkTaskId: q('#enTaskLink').value || null,
+      updatedAt: nowISO()
+    };
+    
+    if(!editingId) {
+      entry.createdAt = nowISO();
+      data.D.push(entry);
+    } else {
+      const idx = data.D.findIndex(x=>x.id===editingId);
+      entry.createdAt = data.D[idx].createdAt;
+      data.D[idx] = entry;
     }
+    
+    saveAll();
+    D.closeEntry();
+    toast('Entry Saved', 'success');
+  };
 
-    // Individual entry Share button
-    elShareBtn.addEventListener('click', ()=>{
-      const id = editingId; if (!id) return;
-      const e = diary.find(x=>x.id===id); if (!e) return;
-      shareTxt((e.title||'entry')+'.txt', entryToText(e));
-    });
+  q('#deleteBtn').onclick = () => {
+    if(confirm('Delete this entry?')){
+      data.D = data.D.filter(x=>x.id!==editingId);
+      saveAll();
+      D.closeEntry();
+      toast('Deleted', 'error');
+    }
+  };
 
-    // Email by type (Professional/Personal)
-    elEmailBtn.addEventListener('click', ()=>{
-      const tmp = {
-        id: editingId||uuid(),
-        date: elEnDate.value || todayISODate(),
-        title: (elEnTitle.value||'').trim(),
-        tags: (elEnTags.value||'').split(',').map(s=>s.trim()).filter(Boolean),
-        important: !!elEnImportant.checked,
-        body: elEnBody.value||'',
-        linkTaskId: elEnTaskLink.value || '',
-        etype: elEnType.value || DEFAULT_TYPE
+  // Quick Add
+  q('#qaSave').onclick = () => {
+    const title = q('#qaTitle').value.trim();
+    if(!title) return toast('Title required', 'error');
+    const entry = {
+      id: uuid(),
+      date: todayISO(),
+      title: title,
+      etype: q('#qaType').value,
+      tags: q('#qaTags').value.split(',').map(s=>s.trim()).filter(Boolean),
+      important: false,
+      body: '',
+      linkTaskId: null,
+      createdAt: nowISO(),
+      updatedAt: nowISO()
+    };
+    data.D.push(entry);
+    saveAll();
+    q('#qaTitle').value = '';
+    q('#qaTags').value = '';
+    q('.qa-box').removeAttribute('open'); // Close accordion
+    toast('Quick Note Added', 'success');
+  };
+
+  // Filters
+  q('#search').oninput = renderList;
+  q('#typeFilter').onchange = renderList;
+  D.toggleImp = (btn) => {
+    showImpOnly = !showImpOnly;
+    btn.dataset.active = showImpOnly;
+    btn.style.background = showImpOnly ? 'var(--warn)' : 'var(--panel)';
+    btn.style.color = showImpOnly ? '#000' : 'var(--text)';
+    renderList();
+  };
+
+  // Prefill
+  q('#prefillFromTask').onclick = () => {
+    const tid = q('#enTaskLink').value;
+    if(!tid) return toast('Select a task first', 'error');
+    const t = data.T.find(x=>x.id===tid);
+    const c = data.C.find(x=>x.id===t.customerId);
+    
+    const txt = `\n\n--- Linked Task ---\nCustomer: ${c?c.name:'N/A'}\nDesc: ${t.description}\nStatus: ${t.status}`;
+    q('#enBody').value += txt;
+    D.autoGrow(q('#enBody'));
+    if(!q('#enTitle').value) q('#enTitle').value = `Update on ${c?c.name:'Task'}`;
+  };
+
+  // Import/Export
+  D.backupJSON = () => {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `Backup_${todayISO()}.json`;
+    a.click();
+  };
+
+  D.importJSON = () => {
+    const inp = q('#jsonFile');
+    inp.onchange = (e) => {
+      const f = e.target.files[0];
+      if(!f) return;
+      const r = new FileReader();
+      r.onload = (res) => {
+        try {
+          const json = JSON.parse(res.target.result);
+          if(json.C) data.C = json.C;
+          if(json.T) data.T = json.T;
+          if(json.L) data.L = json.L;
+          if(json.D) data.D = json.D;
+          saveAll();
+          toast('Data Imported', 'success');
+        } catch(err) { toast('Invalid JSON', 'error'); }
       };
-      const recipient = (tmp.etype === 'professional') ? EMAIL_PRO : EMAIL_PERSONAL;
-      const subject = encodeURIComponent(`Diary: ${tmp.title||'(no title)'} (${tmp.date})`);
-      const body = encodeURIComponent(entryToText(tmp));
-      window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
-    });
+      r.readAsText(f);
+    };
+    inp.click();
+  };
 
-    /* ===== Quick add ===== */
-    q('#qaSave').addEventListener('click', ()=>{
-      const title = (q('#qaTitle').value||'').trim();
-      const tags = (q('#qaTags').value||'').split(',').map(s=>s.trim()).filter(Boolean);
-      const imp = !!q('#qaImportant').checked;
-      const etype = q('#qaType').value || DEFAULT_TYPE;
-      const d = todayISODate();
-      if (!title){ toast('error','Add a title first'); return; }
-      diary.push({ id: uuid(), date:d, title, tags, important:imp, body:'', linkTaskId:null, etype, createdAt: nowISO(), updatedAt: nowISO() });
-      q('#qaTitle').value=''; q('#qaTags').value=''; q('#qaImportant').checked=false; q('#qaType').value=DEFAULT_TYPE;
-      saveAll(); toast('success','Quick entry added');
-    });
+  D.exportCSV = () => {
+    const h = ["ID","Date","Title","Type","Body","Tags"];
+    const rows = data.D.map(e => [
+      e.id, e.date, `"${(e.title||'').replace(/"/g,'""')}"`, e.etype, `"${(e.body||'').replace(/\n/g,' ')}"`, `"${(e.tags||[]).join(',')}"`
+    ]);
+    const csv = [h.join(',')].concat(rows.map(r=>r.join(','))).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Diary_${todayISO()}.csv`;
+    a.click();
+  };
+  
+  // TXT Logic
+  function entryToTxt(e){
+    return `DATE: ${e.date}\nTITLE: ${e.title} [${e.etype}]\nTAGS: ${(e.tags||[]).join(', ')}\n----------------\n${e.body||''}\n\n`;
+  }
 
-    /* ===== Import/Export/Backup ===== */
-    function exportCSV(){
-      try{
-        const rows = [["EntryID","Date","Title","Type","Tags","Important","LinkedTaskID","Body","Created At","Updated At"]];
-        for(const e of diary){
-          rows.push([e.id, e.date||"", e.title||"", getType(e), (e.tags||[]).join("; "), e.important? "Yes":"No", e.linkTaskId||"", (e.body||"").replace(/\n/g,'\\n'), e.createdAt||"", e.updatedAt||""]);
-        }
-        saveCSV("Diary.csv", rows);
-        toast('success','Diary CSV exported');
-      }catch(e){ console.error('export', e); toast('error','Export failed'); }
-    }
-    function saveCSV(filename, rows){
-      const csv = rows.map(r => r.map(cell => {
-        const s = String(cell??"");
-        return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
-      }).join(",")).join("\n");
-      const blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
-      try{
-        const file = new File([blob], filename, {type: blob.type});
-        if (navigator.canShare && navigator.canShare({ files: [file] })){
-          navigator.share({ files: [file], title: filename });
-          return;
-        }
-      }catch(e){}
-      try{
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = filename; a.target = "_blank"; a.click();
-        setTimeout(()=>URL.revokeObjectURL(url), 1500);
-        return;
-      }catch(e){}
-      const dataUrl = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-      window.location.href = dataUrl;
-    }
-    function backupJSON(){
-      const payload = { version:3, exportedAt: nowISO(), customers, tasks, leads, diary };
-      const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
-      try{
-        const file = new File([blob], 'customer_tasks_backup.json', {type: blob.type});
-        if (navigator.canShare && navigator.canShare({ files: [file] })){
-          navigator.share({ files: [file], title: 'Backup JSON' });
-          return;
-        }
-      }catch(e){}
-      try{
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'customer_tasks_backup.json'; a.click();
-        setTimeout(()=>URL.revokeObjectURL(url), 1000);
-        return;
-      }catch(e){}
-      const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(payload));
-      window.location.href = dataUrl;
-    }
-    function importJSON(){
-      const inp = q('#jsonFile'); if (!inp) return;
-      inp.value = "";
-      inp.onchange = ()=>{
-        const file = inp.files && inp.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = ()=>{
-          try{
-            const payload = JSON.parse(reader.result);
-            const C = payload.customers || payload.C || [];
-            const T = payload.tasks || payload.T || [];
-            const L = payload.leads || payload.L || [];
-            const D = payload.diary || payload.D || [];
-            if (Array.isArray(C)) customers = C;
-            if (Array.isArray(T)) tasks = T;
-            if (Array.isArray(L)) leads = L;
-            if (Array.isArray(D)) diary = D;
-            saveAll();
-            toast('success','Imported JSON');
-          }catch(e){ console.error(e); toast('error','Bad JSON file'); }
-        };
-        reader.readAsText(file);
-      };
-      inp.click();
-    }
-    D.exportCSV = exportCSV;
-    D.backupJSON = backupJSON;
-    D.importJSON = importJSON;
+  D.exportTXT = (mode) => {
+    let pool = data.D.slice().sort((a,b)=> (a.date||"").localeCompare(b.date||""));
+    if(mode !== 'all') pool = pool.filter(e => e.etype === mode);
+    
+    const txt = pool.map(entryToTxt).join('================================\n');
+    const blob = new Blob([txt], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Diary_${mode}_${todayISO()}.txt`;
+    a.click();
+  };
 
-    /* ===== TXT rollup (to date) ===== */
-    function entriesToRollupTxt(entries, label){
-      const today = todayISODate();
-      const head = [
-        `Diary Export up to ${today} (${label})`,
-        `Generated at: ${fmtDate(nowISO())}`,
-        `Total entries: ${entries.length}`,
-        ''.padEnd(40,'='),
-        ''
-      ];
-      const blocks = [];
-      for(const e of entries){
-        blocks.push(entryToText(e));
-      }
-      return head.concat(blocks).join('\n');
-    }
-    function exportTXT(filterType='all'){
-      const today = todayISODate();
-      let pool = diary.slice();
+  // Individual Share
+  q('#shareBtn').onclick = () => {
+    const e = data.D.find(x=>x.id===editingId);
+    if(!e) return;
+    const blob = new Blob([entryToTxt(e)], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${e.title.replace(/[^a-z0-9]/gi,'_')}.txt`;
+    a.click();
+  };
 
-      // include entries with date <= today; if no date, include if createdAt <= today end
-      pool = pool.filter(e=>{
-        if (e.date) return String(e.date) <= today;
-        try { return new Date(e.createdAt||0) <= new Date(); } catch { return true; }
-      });
+  // Email
+  q('#emailBtn').onclick = () => {
+    const e = data.D.find(x=>x.id===editingId);
+    const to = (e && e.etype === 'personal') ? EMAIL_PERSONAL : EMAIL_PRO;
+    const subject = `Diary: ${e ? e.title : 'New Entry'}`;
+    const body = e ? entryToTxt(e) : '';
+    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
 
-      if (filterType==='professional') pool = pool.filter(e=> getType(e)==='professional');
-      if (filterType==='personal') pool = pool.filter(e=> getType(e)==='personal');
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if(!e.target.closest('.menu-wrap')) q('#mainMenu').classList.remove('open');
+  });
 
-      // sort chronologically (oldest first)
-      pool.sort((a,b)=> new Date(a.date||a.createdAt||0) - new Date(b.date||b.createdAt||0));
+  loadAll();
 
-      const label = filterType==='all' ? 'All' : (filterType==='professional' ? 'Professional' : 'Personal');
-      const txt = entriesToRollupTxt(pool, label);
-      const fname = `Diary_${label}_to_${today}.txt`;
-      shareTxt(fname, txt);
-      toast('success', `TXT exported (${label})`);
-    }
-    D.exportTXT = exportTXT;
-
-    /* ===== Row open (edit) ===== */
-    elList.addEventListener('click', (e)=>{
-      const row = e.target.closest('.row[data-entry-id]'); if (!row) return;
-      openEntry(row.dataset.entryId);
-    });
-    elList.addEventListener('keydown', (e)=>{
-      if (e.key !== 'Enter') return;
-      const row = e.target.closest('.row[data-entry-id]'); if (row) openEntry(row.dataset.entryId);
-    });
-
-    /* ===== Init ===== */
-    // Storage health indicator
-    try{
-      const testKey = '__test__';
-      localStorage.setItem(testKey, 'ok');
-      localStorage.removeItem(testKey);
-      q('#dataStatus').title = 'Local storage OK';
-    }catch(e){
-      q('#dataStatus').textContent += ' • (storage blocked)';
-    }
-
-    render();
-  })();
-  </script>
+})();
+</script>
 </body>
 </html>
