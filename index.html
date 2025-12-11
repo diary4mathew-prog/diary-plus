@@ -1,81 +1,200 @@
+
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
-  <title>Diary (Companion)</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <title>Diary + Bot + Notes App</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
   <style>
     :root{
-      --bg: #0f172a; --panel: #1e293b; --panel-hover: #334155;
-      --text: #f1f5f9; --muted: #94a3b8; --border: #334155;
-      --accent: #3b82f6; --accent-hover: #2563eb;
-      --success: #10b981; --warn: #f59e0b; --danger: #ef4444;
-      --pro: #6366f1; --pers: #a855f7;
-      --font: 'Inter', system-ui, -apple-system, sans-serif;
+      --bg:#0b1020; --panel:#121a35; --panel2:#0f1530; --text:#eaf0ff; --muted:#aab4d6;
+      --border:#1f2a4f; --accent:#5b8cff; --accent2:#74d680; --warn:#ffcc66; --danger:#ff6b6b;
+      --header-height:60px;
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;padding-bottom:40px}
+    [data-theme="light"]{
+      --bg:#f5f7ff; --panel:#ffffff; --panel2:#f3f6ff; --text:#0c1533; --muted:#4a5577;
+      --border:#d8def0; --accent:#375dfb; --accent2:#2fbf71; --warn:#f6b84e; --danger:#ef4b4b;
+    }
+    *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
     
-    /* Layout & Header */
-    header{position:sticky;top:0;z-index:20;background:rgba(15,23,42,0.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);padding:10px 16px}
-    .container{max-width:800px;margin:0 auto;padding:16px}
-    .hrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
-    h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-0.02em}
-    .sub{font-size:12px;color:var(--muted);margin-top:2px}
+    body{
+      margin:0; font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; 
+      background:var(--bg); color:var(--text); 
+      height:100dvh; width:100vw; overflow:hidden; 
+      display:flex; flex-direction:column;
+      -webkit-font-smoothing:antialiased;
+    }
     
-    /* Buttons & Inputs */
-    button, select, input, textarea{font-family:inherit;font-size:14px}
-    .btn{appearance:none;border:none;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;justify-content:center;gap:6px}
-    .btn:active{transform:scale(0.97)}
-    .btn.primary{background:var(--accent);color:#fff} .btn.primary:hover{background:var(--accent-hover)}
-    .btn.secondary{background:var(--panel);border:1px solid var(--border);color:var(--text)} .btn.secondary:hover{background:var(--panel-hover)}
-    .btn.ok{background:var(--success);color:#fff}
-    .btn.danger{background:var(--danger);color:#fff}
-    .btn.icon{padding:8px;border-radius:50%}
-    .btn.sm{padding:4px 10px;font-size:12px;height:28px}
+    /* --- HEADER --- */
+    header{
+      height:var(--header-height); flex-shrink:0; display:flex; align-items:center; gap:12px; padding:0 16px;
+      background:var(--panel); border-bottom:1px solid var(--border); z-index:50;
+      padding-top: env(safe-area-inset-top);
+      justify-content: flex-start;
+    }
+    .app-title {
+        font-size: 20px; font-weight: 800; color: var(--text); flex-grow: 1;
+    }
+    
+    .icon-btn{
+      background:transparent; border:none; color:var(--text); font-size:24px; cursor:pointer; 
+      padding:8px; display:flex; align-items:center; justify-content:center;
+    }
 
-    input[type="text"],input[type="date"],textarea,select{
-      width:100%;padding:10px;border-radius:8px;border:1px solid var(--border);
-      background:var(--bg);color:var(--text);outline:none;transition:border-color .2s;
+    /* --- SIDEBAR DRAWER --- */
+    .sidebar-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 140;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+      backdrop-filter: blur(2px);
     }
-    input:focus, textarea:focus, select:focus{border-color:var(--accent)}
-    textarea{min-height:100px;resize:vertical;line-height:1.5}
+    .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+
+    aside.sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 280px; max-width: 80%;
+      background: var(--panel); border-right: 1px solid var(--border);
+      z-index: 150;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding-top: calc(var(--header-height) + env(safe-area-inset-top));
+      display: flex; flex-direction: column;
+    }
+    aside.sidebar.open { transform: translateX(0); }
+
+    .sidebar-header {
+      padding: 20px;
+      font-size: 20px; font-weight: 800; color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .sidebar-nav { padding: 10px; overflow-y: auto; flex: 1; }
     
-    /* Utility Classes */
+    .nav-row {
+      display: flex; align-items: center; gap: 15px;
+      width: 100%; padding: 16px;
+      background: transparent; border: none;
+      color: var(--muted); font-size: 16px; font-weight: 600;
+      text-align: left; cursor: pointer;
+      border-radius: 8px; margin-bottom: 4px;
+      transition: background 0.2s;
+    }
+    .nav-row:hover { background: var(--panel2); color: var(--text); }
+    .nav-row.active { background: rgba(91,140,255,0.1); color: var(--accent); border-left: 4px solid var(--accent); }
+    .nav-row span { font-size: 22px; width: 30px; text-align: center; }
+
+    /* --- MAIN CONTENT --- */
+    main{
+      flex:1; overflow-y:auto; padding:16px; 
+      padding-bottom: 100px;
+      -webkit-overflow-scrolling: touch;
+      position: relative; z-index: 10;
+    }
+    .container{max-width:800px; margin:0 auto}
+
+    /* --- FAB --- */
+    .fab{
+      position:fixed; 
+      bottom: calc(20px + env(safe-area-inset-bottom)); 
+      right:20px;
+      width:60px; height:60px; border-radius:50%; background:var(--accent); color:#fff;
+      display:flex; align-items:center; justify-content:center; font-size:32px; 
+      box-shadow:0 4px 15px rgba(0,0,0,.4); cursor:pointer; z-index:90; border:none;
+    }
+    .fab:active{transform:scale(0.95)}
+
+    /* --- COMMON UI --- */
     .hidden{display:none !important}
-    .inline{display:flex;gap:8px;align-items:center}
-    .wrap{flex-wrap:wrap}
+    .inline{display:flex; gap:10px; align-items:center}
     .grow{flex:1}
-    .muted{color:var(--muted)}
-    .small{font-size:12px}
-    .hr{height:1px;background:var(--border);margin:12px 0}
-    .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)}
+    .muted{color:var(--muted); font-size:13px}
+    
+    .btn{padding:10px 16px; border-radius:10px; border:none; font-weight:600; cursor:pointer; font-size:14px; font-family:inherit}
+    .btn.primary{background:var(--accent); color:#fff}
+    .btn.secondary{background:var(--panel); border:1px solid var(--border); color:var(--text)}
+    .btn.danger{background:var(--danger); color:#fff}
+    .btn.sm{padding:6px 12px; font-size:12px}
+    .btn.icon{padding:8px; border-radius:50%}
+    .btn:active{transform:scale(0.97)}
 
-    /* Pills & Badges */
-    .pill{padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase}
-    .p-pro{background:rgba(99,102,241,0.2);color:#a5b4fc;border:1px solid rgba(99,102,241,0.3)}
-    .p-pers{background:rgba(168,85,247,0.2);color:#e9d5ff;border:1px solid rgba(168,85,247,0.3)}
-    .p-link{background:rgba(16,185,129,0.2);color:#6ee7b7}
-    .p-imp{background:rgba(245,158,11,0.2);color:#fcd34d}
-
-    /* Menu Dropdown */
-    .menu-wrap{position:relative}
-    .menu-btn{background:transparent;color:var(--text);border:1px solid var(--border)}
-    .menu-dropdown{
-      position:absolute;top:100%;right:0;margin-top:8px;width:200px;
-      background:var(--panel);border:1px solid var(--border);border-radius:8px;
-      box-shadow:0 10px 25px rgba(0,0,0,0.5);display:none;flex-direction:column;overflow:hidden;z-index:50;
+    input, textarea, select{
+      font-family:inherit;font-size:14px;
     }
-    .menu-wrap.open .menu-dropdown{display:flex}
-    .menu-item{padding:10px 14px;text-align:left;background:none;border:none;color:var(--text);cursor:pointer;border-bottom:1px solid var(--border);font-size:13px}
-    .menu-item:hover{background:var(--panel-hover)}
-    .menu-item:last-child{border-bottom:none}
+    input[type="text"],input[type="tel"],input[type="date"],input[type="time"],textarea,select{
+      width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);
+      background:var(--bg);color:var(--text);outline:none;margin-bottom:12px;
+    }
+    input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 
-    /* List & Timeline */
+    label{font-size:12px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px; display:block}
+
+    /* Rows */
+    .row{display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); align-items:flex-start}
+    .row:last-child{border-bottom:none}
+    
+    /* History */
+    .hist-group-header{
+      padding:12px; background:var(--panel); border-radius:10px; font-weight:700; font-size:14px;
+      display:flex; justify-content:space-between; align-items:center; cursor:pointer; margin-bottom:8px;
+    }
+    .hist-content{display:none; padding-left:8px; margin-bottom:12px}
+    .expanded .hist-content{display:block}
+    
+    /* Modals */
+    .backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(3px); z-index:200;
+      display:none; align-items:center; justify-content:center; padding:16px;
+    }
+    .modal{
+      width:92%; max-width:500px; max-height:85dvh; background:var(--panel); border-radius:18px; 
+      padding:0; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.5);
+      border: 1px solid var(--border); display:flex; flex-direction:column;
+    }
+    .modal-head{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .modal-body{padding:16px;overflow-y:auto}
+    .modal-foot{
+      padding:12px 16px;
+      border-top:1px solid var(--border);
+      display:flex;justify-content:space-between;align-items:center;
+      background:rgba(0,0,0,0.15);
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    /* --- LARGE MODAL SIZE INCREASE --- */
+    #modalDiary .modal,
+    #modalBot .modal,
+    #modalNote .modal {
+      width: 95%; 
+      max-width: 600px;
+      height: 90dvh;
+      max-height: 90dvh;
+      display: flex;
+    }
+
+    /* Toaster */
+    #toaster{
+      position:fixed;bottom:120px;left:50%;transform:translateX(-50%);
+      z-index:300;display:flex;flex-direction:column;gap:10px;width:90%;max-width:400px;
+      pointer-events:none;
+    }
+    #toaster .toast-card{
+      pointer-events:auto;
+      background:var(--panel2);color:#fff;padding:12px 20px;
+      border-radius:50px;text-align:center;box-shadow:0 5px 15px rgba(0,0,0,0.3);
+      border:1px solid var(--accent);font-weight:600;
+    }
+
+    /* --- Diary/Notes specific styles --- */
+    .small{font-size:12px}
+    .wrap{flex-wrap:wrap}
+    
     .date-header{
-      position:sticky; top:65px; z-index:15;
+      position:sticky; top:72px; z-index:15;
       background:var(--bg); padding:8px 0; font-size:13px; font-weight:700; color:var(--muted);
-      border-bottom:1px solid var(--border); margin:20px 0 10px 0; display:flex; align-items:center; gap:8px;
+      border-bottom:1px solid var(--border); margin:16px 0 8px 0; display:flex; align-items:center; gap:8px;
     }
     .date-header::after{content:'';flex:1;height:1px;background:var(--border)}
     
@@ -83,533 +202,655 @@
       position:relative; padding:14px; border-radius:8px; border:1px solid var(--border);
       background:rgba(30,41,59,0.5); margin-bottom:10px; cursor:pointer; transition:all .2s;
     }
-    .entry:hover{background:var(--panel);border-color:var(--accent)}
-    .entry.important{border-left:3px solid var(--warn)}
-    
-    .entry-body{font-size:14px;color:#cbd5e1;margin-top:6px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
-    /* Simple Markdown Styling in List */
-    .md-bold{font-weight:700;color:#fff}
-    .md-list{display:block;padding-left:10px;border-left:2px solid var(--border);margin:4px 0}
-    
-    /* Quick Add Accordion */
-    details.qa-box{margin-bottom:16px;border:1px solid var(--border);border-radius:8px;background:var(--panel);overflow:hidden}
-    details.qa-box summary{padding:10px 14px;cursor:pointer;font-weight:600;font-size:13px;list-style:none;display:flex;align-items:center;justify-content:space-between}
-    details.qa-box summary::-webkit-details-marker{display:none}
-    details.qa-box summary::after{content:'+';font-size:16px;font-weight:bold}
-    details.qa-box[open] summary::after{content:'-'}
-    details.qa-box[open] summary{border-bottom:1px solid var(--border)}
-    .qa-content{padding:12px}
-
-    /* Modal */
-    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(2px);z-index:100;display:none;align-items:center;justify-content:center;padding:12px}
-    .modal{width:100%;max-width:600px;background:#1e293b;border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.5);display:flex;flex-direction:column;max-height:90vh}
-    .modal-head{padding:16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-    .modal-body{padding:16px;overflow-y:auto}
-    .modal-foot{padding:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:rgba(15,23,42,0.3)}
-
-    /* Toast */
-    #toaster{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px}
-    .toast{background:var(--panel);border-left:4px solid var(--accent);padding:12px 16px;border-radius:4px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.5);font-size:14px;animation:slideIn 0.3s ease}
-    @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+    .entry:hover{background:var(--panel2);border-color:var(--accent)}
+    .entry-body{
+      font-size:14px;color:#cbd5e1;margin-top:6px;line-height:1.5;
+      overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+    }
+    .note-entry{
+      padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;
+      background:var(--panel2);
+    }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="container hrow" style="padding:0">
-    <div>
-      <h1>Diary</h1>
-      <div class="sub">Companion to Tasks</div>
+  <div class="sidebar-overlay" id="sbOverlay" onclick="toggleSidebar()"></div>
+
+  <aside class="sidebar" id="sbMenu">
+    <div class="sidebar-header">
+      <span>🚀 App Menu</span>
+      <button class="icon-btn" onclick="toggleSidebar()">✕</button>
     </div>
-    <div class="inline">
-      <button class="btn primary" onclick="D.openEntry()">+ New</button>
+    <div class="sidebar-nav">
+      <button class="nav-row active" data-target="viewDiary"><span>📔</span> Diary</button>
+      <button class="nav-row" data-target="viewNotes"><span>🗒️</span> Notes</button>
+      <button class="nav-row" data-target="viewBot"><span>🤖</span> Bot Gen</button>
+    </div>
+  </aside>
+
+  <header>
+    <button class="icon-btn" onclick="toggleSidebar()">☰</button>
+    <div class="app-title">Diary + Bot + Notes</div>
+  </header>
+
+  <main>
+    <div class="container">
       
-      <div class="menu-wrap" id="mainMenu">
-        <button class="btn secondary icon" onclick="this.parentElement.classList.toggle('open')">
-          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"></path></svg>
-        </button>
-        <div class="menu-dropdown">
-          <button class="menu-item" onclick="D.exportTXT('all')">Export All TXT</button>
-          <button class="menu-item" onclick="D.exportTXT('professional')">Export Pro TXT</button>
-          <button class="menu-item" onclick="D.exportTXT('personal')">Export Personal TXT</button>
-          <button class="menu-item" onclick="D.exportCSV()">Export CSV</button>
-          <button class="menu-item" onclick="D.backupJSON()">Backup Data</button>
-          <button class="menu-item" onclick="D.importJSON()">Import Backup</button>
+      <div id="viewDiary">
+        <div class="inline wrap" style="justify-content:space-between; margin-bottom:10px">
+          <div class="inline" style="gap:6px">
+            <h3 style="margin:0">Diary</h3>
+            <span class="muted small">Journal Entries</span>
+          </div>
+          <button class="btn primary sm" onclick="CT.diary.openEntry()">+ New Entry</button>
+        </div>
+
+        <div id="diaryStatus" class="small muted" style="margin-bottom:10px; text-align:right"></div>
+        <div id="diaryList"></div>
+        <div style="height:80px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:12px">
+          &mdash; End of Diary &mdash;
         </div>
       </div>
-    </div>
-  </div>
-</header>
-
-<div class="container">
-
-  <div class="inline wrap" style="margin-bottom:16px">
-    <input id="search" class="grow" type="text" placeholder="Search entries..." style="background:var(--panel);border-color:transparent">
-    <select id="typeFilter" class="btn secondary sm" style="width:auto">
-      <option value="any">All Types</option>
-      <option value="professional">Professional</option>
-      <option value="personal">Personal</option>
-    </select>
-    <button id="filterImp" class="btn secondary sm" data-active="false" onclick="D.toggleImp(this)">★ Only</button>
-  </div>
-
-  <details class="qa-box">
-    <summary>Quick Add</summary>
-    <div class="qa-content">
-      <div class="inline wrap" style="gap:8px; margin-bottom:8px">
-        <input id="qaTitle" class="grow" type="text" placeholder="Title...">
-        <select id="qaType" style="width:auto; min-width:100px">
-          <option value="professional">Pro</option>
-          <option value="personal">Pers</option>
-        </select>
+      
+      <div id="viewNotes" class="hidden">
+        <div class="inline wrap" style="justify-content:space-between; margin-bottom:10px">
+          <h3 style="margin:0">Notes</h3>
+          <button class="btn primary sm" onclick="CT.notes.openNote()">+ New Note</button>
+        </div>
+        <div id="noteList"></div>
       </div>
-      <div class="inline wrap" style="gap:8px">
-        <input id="qaTags" class="grow" type="text" placeholder="#tags...">
-        <button id="qaSave" class="btn ok">Add Note</button>
+
+      <div id="viewBot" class="hidden">
+        <div class="inline" style="justify-content:space-between; margin-bottom:12px">
+           <h3 style="margin:0">Timeline Queue</h3>
+           <div class="muted">Pres → Fut</div>
+        </div>
+        <div id="botHistoryList"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <button id="fab" class="fab">+</button>
+
+  <div id="modalBot" class="backdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <div class="inline" style="justify-content:space-between;width:100%">
+          <h3 style="margin:0">New Command</h3>
+          <button class="btn secondary sm" id="btnResetBot">Reset</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:12px">
+          <button class="btn secondary sm" onclick="CT.bot.smartTime(10,0)">10 AM</button>
+          <button class="btn secondary sm" onclick="CT.bot.smartTime(11,0)">11 AM</button>
+          <button class="btn secondary sm" onclick="CT.bot.smartTime(15,30)">3:30 PM</button>
+          <button class="btn secondary sm" onclick="CT.bot.smartTime(16,0)">4 PM</button>
+        </div>
+        <div class="inline">
+          <div class="grow">
+            <label>Date</label>
+            <input id="bDate" type="date">
+          </div>
+          <div class="grow">
+            <label>Time</label>
+            <input id="bTime" type="time">
+          </div>
+        </div>
+        <div class="inline" style="margin-bottom:10px">
+          <button class="btn secondary sm grow" onclick="CT.bot.addDays(1)">+1 Day</button>
+          <button class="btn secondary sm grow" onclick="CT.bot.addDays(2)">+2 Days</button>
+        </div>
+        <label>Message</label>
+        <input id="bMsg" type="text" placeholder="Reminder text...">
+        
+        <div id="botOutput" class="hidden" style="margin-top:15px; display:flex; flex-direction:column; gap:8px"></div>
+
+      </div>
+      <div class="modal-foot">
+        <button class="btn secondary grow" onclick="closeModals()">Close</button>
+        <button id="btnGenBot" class="btn primary grow">Generate & Save</button>
       </div>
     </div>
-  </details>
-
-  <div id="dataStatus" class="sub" style="margin-bottom:10px; text-align:right"></div>
-  
-  <div id="list"></div>
-  
-  <div style="height:100px; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:12px">
-    &mdash; End of Diary &mdash;
   </div>
-</div>
-
-<div id="entryModal" class="modal-backdrop">
-  <div class="modal">
-    <div class="modal-head">
-      <h3 id="modalTitle" style="margin:0">Entry</h3>
-      <button class="btn secondary sm" onclick="D.closeEntry()">Esc</button>
+  
+  <div id="modalSmartDel" class="backdrop">
+    <div class="modal" style="text-align:center">
+      <div class="modal-head">
+        <h3 style="margin:0">Delete Schedule?</h3>
+      </div>
+      <div class="modal-body">
+        <p class="muted">For <span id="sdDate"></span></p>
+      </div>
+      <div class="modal-foot" style="flex-direction:column;align-items:stretch">
+        <button id="btnEmailDel" class="btn primary" style="width:100%; margin-bottom:8px">📧 Email then Delete</button>
+        <button id="btnJustDel" class="btn danger" style="width:100%">🗑️ Just Delete</button>
+      </div>
     </div>
-    
-    <div class="modal-body">
-      <div class="inline wrap" style="gap:10px; margin-bottom:12px">
-        <div style="flex:1">
-          <label class="small muted">Date</label>
+  </div>
+
+  <div id="modalDiary" class="backdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modalDiaryTitle" style="margin:0">Entry</h3>
+        <button class="btn secondary sm" onclick="CT.diary.closeEntry()">Esc</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column;">
+        <div style="margin-bottom:12px">
+          <label>Date</label>
           <input id="enDate" type="date">
         </div>
-        <div style="flex:1">
-          <label class="small muted">Type</label>
-          <select id="enType">
-            <option value="professional">Professional</option>
-            <option value="personal">Personal</option>
-          </select>
+
+        <div style="margin-bottom:12px">
+          <input id="enTitle" type="text" placeholder="Title" style="font-weight:bold; font-size:16px">
+        </div>
+        
+        <div style="margin-bottom:12px; flex: 1; display: flex; flex-direction: column;">
+          <label>Note</label>
+          <textarea id="enBody" placeholder="Write your notes here..." oninput="CT.autoGrow(this)" style="flex: 1; min-height: 200px;"></textarea>
         </div>
       </div>
-
-      <div style="margin-bottom:12px">
-        <input id="enTitle" type="text" placeholder="Title (e.g. Meeting with...)" style="font-weight:bold; font-size:16px">
-      </div>
-      
-      <div class="inline" style="margin-bottom:12px; gap:8px">
-        <input id="enTags" type="text" placeholder="Tags (comma separated)...">
-        <label class="btn secondary sm" style="cursor:pointer; user-select:none">
-          <input id="enImportant" type="checkbox" style="width:auto;margin:0 4px 0 0"> ★
-        </label>
-      </div>
-
-      <div style="margin-bottom:12px">
-        <textarea id="enBody" placeholder="Write your notes here..." oninput="D.autoGrow(this)"></textarea>
-      </div>
-
-      <div class="card" style="padding:10px; background:rgba(0,0,0,0.2)">
-        <div class="inline" style="justify-content:space-between; margin-bottom:6px">
-          <span class="small muted">Link to Task (Optional)</span>
-          <button id="prefillFromTask" class="btn secondary sm" style="padding:2px 8px">Copy Task Info</button>
+      <div class="modal-foot">
+        <div class="inline">
+          <button id="deleteDiaryBtn" class="btn danger sm hidden">Delete</button>
+          <button id="shareDiaryBtn" class="btn secondary sm">TXT</button>
+          <button id="emailDiaryBtn" class="btn secondary sm">Email</button>
         </div>
-        <select id="enTaskLink" style="font-size:12px"></select>
-        <div id="enTaskMeta" class="small muted" style="margin-top:6px; font-style:italic"></div>
-      </div>
-    </div>
-
-    <div class="modal-foot">
-      <div class="inline">
-        <button id="deleteBtn" class="btn danger sm hidden">Delete</button>
-        <button id="shareBtn" class="btn secondary sm">TXT</button>
-        <button id="emailBtn" class="btn secondary sm">Email</button>
-      </div>
-      <div class="inline">
-        <button class="btn secondary" onclick="D.closeEntry()">Cancel</button>
-        <button id="saveBtn" class="btn primary">Save Entry</button>
+        <div class="inline">
+          <button class="btn secondary sm" onclick="CT.diary.closeEntry()">Cancel</button>
+          <button id="saveDiaryBtn" class="btn primary">Save Entry</button>
+        </div>
       </div>
     </div>
   </div>
-</div>
-
-<input id="jsonFile" type="file" accept="application/json" class="hidden"/>
-<div id="toaster"></div>
-
-<script>
-(function(){
-  'use strict';
-  const D = window.D = {};
-
-  // Config
-  const EMAIL_PRO = "diary4mathew@gmail.com";
-  const EMAIL_PERSONAL = "mathewfederal3@hotmail.com";
   
-  // Storage Keys (Preserved from previous version)
-  const LS = { C: "ct_customers_v1", T: "ct_tasks_v1", L: "ct_leads_v1", D: "ct_diary_v1" };
+  <div id="modalNote" class="backdrop">
+    <div class="modal">
+      <div class="modal-head">
+        <h3 id="modalNoteTitle" style="margin:0">Temporary Note</h3>
+        <button class="btn secondary sm" onclick="closeModals()">Esc</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column;">
+        <label>Note Text</label>
+        <textarea id="nBody" placeholder="Jot down a quick thought or number..." oninput="CT.autoGrow(this)" style="min-height: 200px; flex: 1;"></textarea>
+      </div>
+      <div class="modal-foot">
+        <div class="inline">
+          <button id="deleteNoteBtn" class="btn danger sm hidden">Delete</button>
+          <button id="emailNoteBtn" class="btn secondary sm">Email Note</button>
+        </div>
+        <div class="inline">
+          <button class="btn secondary sm" onclick="closeModals()">Cancel</button>
+          <button id="saveNoteBtn" class="btn primary">Save Note</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  // Utils
-  const q = s => document.querySelector(s);
-  const uuid = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
-  const nowISO = () => new Date().toISOString();
-  const todayISO = () => nowISO().slice(0,10);
-  const fmtDate = d => new Date(d).toLocaleDateString(undefined, {weekday:'short', year:'numeric', month:'short', day:'numeric'});
-  
-  // State
-  let data = { C:[], T:[], L:[], D:[] };
-  let editingId = null;
-  let showImpOnly = false;
+  <div id="toaster"></div>
 
-  // Load Data
-  function loadAll(){
-    data.C = JSON.parse(localStorage.getItem(LS.C) || "[]");
-    data.T = JSON.parse(localStorage.getItem(LS.T) || "[]");
-    data.L = JSON.parse(localStorage.getItem(LS.L) || "[]");
-    data.D = JSON.parse(localStorage.getItem(LS.D) || "[]");
-    renderList();
-  }
-  function saveAll(){
-    localStorage.setItem(LS.C, JSON.stringify(data.C));
-    localStorage.setItem(LS.T, JSON.stringify(data.T));
-    localStorage.setItem(LS.L, JSON.stringify(data.L));
-    localStorage.setItem(LS.D, JSON.stringify(data.D));
-    renderList();
-  }
+  <script>
+    const CT = window.CT || {};
+    const q = s => document.querySelector(s);
+    const qAll = s => document.querySelectorAll(s);
+    const uuid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const nowISO = () => new Date().toISOString();
+    const todayISO = () => nowISO().slice(0,10);
+    const fmtDate = d => new Date(d).toLocaleDateString(undefined, {weekday:'short', year:'numeric', month:'short', day:'numeric'});
 
-  // Toast
-  function toast(msg, type='info'){
-    const t = document.createElement('div');
-    t.className = 'toast';
-    if(type==='error') t.style.borderLeftColor = 'var(--danger)';
-    if(type==='success') t.style.borderLeftColor = 'var(--success)';
-    t.textContent = msg;
-    q('#toaster').appendChild(t);
-    setTimeout(()=>t.remove(), 3000);
-  }
+    // Email config (Target emails for the new app)
+    const EMAIL_TARGET_DIARY = "my_diary_email@example.com";
+    const EMAIL_TARGET_BOT = "my_bot_email@example.com"; 
+    const EMAIL_TARGET_NOTES = "my_notes_email@example.com";
 
-  // Markdown Formatter (Simple)
-  function renderMarkdown(text){
-    if(!text) return '';
-    let html = text
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") // Escape HTML
-      .replace(/\*\*(.*?)\*\*/g, '<span class="md-bold">$1</span>') // Bold
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // Italic
-      .replace(/- (.*?)(\n|$)/g, '<span class="md-list">• $1</span>'); // Lists
-    return html.replace(/\n/g, '<br>');
-  }
+    // State
+    // Using new local storage keys (db_*) to prevent conflict with the main CRM app
+    let botHist = JSON.parse(localStorage.getItem('db_bot') || '[]');
+    let diary = JSON.parse(localStorage.getItem('db_diary') || '[]');
+    let notes = JSON.parse(localStorage.getItem('db_notes') || '[]');
 
-  // Render List
-  function renderList(){
-    const elList = q('#list');
-    elList.innerHTML = '';
+    let currentView = 'viewDiary';
+    let delTargetDate = null;
+    let diaryEditingId = null;
+    let noteEditingId = null;
+
+    const save = () => {
+      localStorage.setItem('db_bot', JSON.stringify(botHist));
+      localStorage.setItem('db_diary', JSON.stringify(diary));
+      localStorage.setItem('db_notes', JSON.stringify(notes));
+      render();
+    };
+
+    const toast = (msg, type='info') => {
+      const d = document.createElement('div');
+      d.className = 'toast-card';
+      if(type==='error') d.style.borderColor = 'var(--danger)';
+      if(type==='success') d.style.borderColor = 'var(--accent2)';
+      d.textContent = msg;
+      q('#toaster').appendChild(d);
+      setTimeout(()=>d.remove(), 2500);
+    };
+
+    /* --- COMMON AUTOGROW FUNCTION --- */
+    CT.autoGrow = function(el){
+      if(!el) return;
+      el.style.height = 'auto';
+      el.style.height = (el.scrollHeight) + 'px';
+    };
     
-    // Status
-    q('#dataStatus').textContent = `Entries: ${data.D.length} • Tasks: ${data.T.length}`;
+    /* --- SIDEBAR TOGGLE LOGIC --- */
+    window.toggleSidebar = function() {
+      q('#sbMenu').classList.toggle('open');
+      q('#sbOverlay').classList.toggle('open');
+    };
 
-    // Filters
-    const term = q('#search').value.toLowerCase();
-    const typeF = q('#typeFilter').value;
-    
-    let pool = data.D.slice().sort((a,b) => (b.date||"") .localeCompare(a.date||"") || (b.createdAt||"").localeCompare(a.createdAt||""));
+    // Sidebar navigation handlers
+    qAll('.nav-row').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = btn.dataset.target;
+        if(target) {
+          qAll('.nav-row').forEach(r => r.classList.remove('active'));
+          btn.classList.add('active');
+          
+          currentView = target;
+          ['viewBot','viewDiary', 'viewNotes'].forEach(id=>{
+            q('#'+id).classList.add('hidden');
+          });
+          q('#' + currentView).classList.remove('hidden');
+          
+          toggleSidebar(); 
+          render();
+          window.scrollTo(0,0);
+        }
+      });
+    });
 
-    if(showImpOnly) pool = pool.filter(e => e.important);
-    if(typeF !== 'any') pool = pool.filter(e => (e.etype||'professional') === typeF);
-    if(term) pool = pool.filter(e => (e.title+e.body+e.tags.join('')).toLowerCase().includes(term));
+    q('#fab').addEventListener('click', () => {
+      if(currentView === 'viewDiary') CT.diary.openEntry();
+      else if(currentView === 'viewBot') openBotModal();
+      else if(currentView === 'viewNotes') CT.notes.openNote();
+    });
 
-    let lastDate = null;
-    const today = todayISO();
-    const yest = new Date(Date.now() - 864e5).toISOString().slice(0,10);
-
-    if(pool.length === 0){
-      elList.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted)">No entries found.</div>`;
-      return;
+    /* --- RENDER DISPATCH --- */
+    function render(){
+      if(currentView === 'viewBot') renderBotHist();
+      else if(currentView === 'viewDiary') CT.diary.renderList();
+      else if(currentView === 'viewNotes') CT.notes.renderList();
     }
+    
+    /* --- MODAL CONTROL --- */
+    function closeModals(){
+      qAll('.backdrop').forEach(e => e.style.display='none');
+    }
+    window.closeModals = closeModals;
 
-    pool.forEach(e => {
-      // Date Header Logic
-      const dRaw = e.date || e.createdAt.slice(0,10);
-      if(dRaw !== lastDate){
-        const head = document.createElement('div');
-        head.className = 'date-header';
-        let label = fmtDate(dRaw);
-        if(dRaw === today) label = "Today";
-        if(dRaw === yest) label = "Yesterday";
-        head.innerHTML = `<span>${label}</span>`;
-        elList.appendChild(head);
-        lastDate = dRaw;
+    qAll('.backdrop').forEach(b => {
+      b.addEventListener('click', (e)=>{
+        if(e.target===b) closeModals();
+      });
+    });
+    
+    window.copyText = (txt) => {
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(txt).then(() => toast('Copied!', 'success')).catch(()=>toast('Failed to copy', 'error'));
+      } else {
+        const el = document.createElement('textarea');
+        el.value = txt; document.body.appendChild(el); el.select();
+        document.execCommand('copy'); document.body.removeChild(el);
+        toast('Copied!', 'success');
+      }
+    };
+
+    /* ========================================================= */
+    /* --- DIARY MODULE --- */
+    /* ========================================================= */
+    CT.diary = {};
+
+    CT.diary.renderList = function(){
+      const elList = q('#diaryList');
+      const statusEl = q('#diaryStatus');
+      elList.innerHTML = '';
+      
+      let pool = diary.slice().sort((a,b) => (b.date||"").localeCompare(a.date||"") || (b.createdAt||"").localeCompare(a.createdAt||""));
+
+      statusEl.textContent = `Total Entries: ${diary.length}`;
+
+      if(pool.length === 0){
+        elList.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted)">No diary entries found.</div>`;
+        return;
       }
 
-      // Card
-      const div = document.createElement('div');
-      div.className = `entry ${e.important?'important':''}`;
-      div.onclick = (ev) => { if(!ev.target.closest('a')) D.openEntry(e.id); };
-      
-      const typeLabel = (e.etype||'professional') === 'professional' ? 'PRO' : 'PERS';
-      const typeClass = (e.etype||'professional') === 'professional' ? 'p-pro' : 'p-pers';
-      const linkedTask = e.linkTaskId ? data.T.find(t=>t.id===e.linkTaskId) : null;
+      let lastDate = null;
+      const today = todayISO();
+      const yest = new Date(Date.now() - 864e5).toISOString().slice(0,10);
 
-      div.innerHTML = `
-        <div class="inline" style="justify-content:space-between">
-          <div class="inline">
-            <span class="pill ${typeClass}">${typeLabel}</span>
-            ${e.important ? '<span class="pill p-imp">IMP</span>' : ''}
-            ${linkedTask ? '<span class="pill p-link">LINKED</span>' : ''}
+      pool.forEach(e => {
+        const dRaw = e.date || (e.createdAt||'').slice(0,10) || todayISO();
+        if(dRaw !== lastDate){
+          const head = document.createElement('div');
+          head.className = 'date-header';
+          let label = fmtDate(dRaw);
+          if(dRaw === today) label = "Today";
+          if(dRaw === yest) label = "Yesterday";
+          head.innerHTML = `<span>${label}</span>`;
+          elList.appendChild(head);
+          lastDate = dRaw;
+        }
+
+        const div = document.createElement('div');
+        div.className = `entry`;
+        div.onclick = (ev) => { if(!ev.target.closest('button')) CT.diary.openEntry(e.id); };
+
+        div.innerHTML = `
+          <div class="inline" style="justify-content:space-between">
             <strong style="font-size:15px">${e.title || '(No Title)'}</strong>
+            <div class="small muted">${dRaw}</div>
           </div>
-          <div class="small muted">${(e.tags||[]).join(', ')}</div>
-        </div>
-        ${e.body ? `<div class="entry-body">${renderMarkdown(e.body)}</div>` : ''}
-      `;
-      elList.appendChild(div);
-    });
-  }
+          ${e.body ? `<div class="entry-body">${e.body}</div>` : ''}
+        `;
+        elList.appendChild(div);
+      });
+    };
 
-  // Modal Logic
-  D.openEntry = (id=null) => {
-    editingId = id;
-    const m = q('#entryModal');
-    const modalTitle = q('#modalTitle');
-    
-    // Populate Task Select
-    const sel = q('#enTaskLink');
-    sel.innerHTML = '<option value="">-- No Link --</option>';
-    // Sort tasks by recent
-    const tasks = data.T.slice().sort((a,b)=> (b.updatedAt||"").localeCompare(a.updatedAt||""));
-    tasks.forEach(t => {
-      const c = data.C.find(x => x.id === t.customerId);
-      const opt = document.createElement('option');
-      opt.value = t.id;
-      opt.textContent = `${c ? c.name.substring(0,15) : 'Unknown'} - ${t.description.substring(0,30)}...`;
-      sel.appendChild(opt);
-    });
-
-    if(id){
-      const e = data.D.find(x=>x.id===id);
-      modalTitle.textContent = "Edit Entry";
-      q('#enDate').value = e.date || todayISO();
-      q('#enType').value = e.etype || 'professional';
-      q('#enTitle').value = e.title || '';
-      q('#enTags').value = (e.tags||[]).join(', ');
-      q('#enImportant').checked = !!e.important;
-      q('#enBody').value = e.body || '';
-      q('#enTaskLink').value = e.linkTaskId || '';
-      q('#deleteBtn').classList.remove('hidden');
-    } else {
-      modalTitle.textContent = "New Entry";
+    CT.diary.openEntry = function(id=null){
+      diaryEditingId = id;
+      const modal = q('#modalDiary');
+      const modalTitle = q('#modalDiaryTitle');
+      
       q('#enDate').value = todayISO();
-      q('#enType').value = 'professional';
-      q('#enTitle').value = '';
-      q('#enTags').value = '';
-      q('#enImportant').checked = false;
-      q('#enBody').value = '';
-      q('#enTaskLink').value = '';
-      q('#deleteBtn').classList.add('hidden');
-    }
-    
-    updateTaskMeta();
-    D.autoGrow(q('#enBody'));
-    m.style.display = 'flex';
-  };
 
-  D.closeEntry = () => { q('#entryModal').style.display = 'none'; };
-  D.autoGrow = (el) => { el.style.height = 'auto'; el.style.height = (el.scrollHeight) + 'px'; };
-
-  // Linking Meta
-  function updateTaskMeta(){
-    const tid = q('#enTaskLink').value;
-    const div = q('#enTaskMeta');
-    if(!tid) { div.textContent = ''; return; }
-    const t = data.T.find(x=>x.id===tid);
-    if(!t) { div.textContent = 'Task not found'; return; }
-    const c = data.C.find(x=>x.id===t.customerId);
-    div.textContent = `Customer: ${c?c.name:'N/A'} • Status: ${t.status} • Due: ${t.dueDate||'N/A'}`;
-  }
-  q('#enTaskLink').onchange = updateTaskMeta;
-
-  // Actions
-  q('#saveBtn').onclick = () => {
-    const title = q('#enTitle').value.trim();
-    if(!title) return toast('Title required', 'error');
-    
-    const entry = {
-      id: editingId || uuid(),
-      date: q('#enDate').value,
-      title: title,
-      etype: q('#enType').value,
-      tags: q('#enTags').value.split(',').map(s=>s.trim()).filter(Boolean),
-      important: q('#enImportant').checked,
-      body: q('#enBody').value,
-      linkTaskId: q('#enTaskLink').value || null,
-      updatedAt: nowISO()
+      if(id){
+        const e = diary.find(x=>x.id===id);
+        modalTitle.textContent = "Edit Entry";
+        q('#enDate').value = e.date || todayISO();
+        q('#enTitle').value = e.title || '';
+        q('#enBody').value = e.body || '';
+        q('#deleteDiaryBtn').classList.remove('hidden');
+      } else {
+        modalTitle.textContent = "New Entry";
+        q('#enTitle').value = '';
+        q('#enBody').value = '';
+        q('#deleteDiaryBtn').classList.add('hidden');
+      }
+      CT.autoGrow(q('#enBody'));
+      modal.style.display='flex';
     };
-    
-    if(!editingId) {
-      entry.createdAt = nowISO();
-      data.D.push(entry);
-    } else {
-      const idx = data.D.findIndex(x=>x.id===editingId);
-      entry.createdAt = data.D[idx].createdAt;
-      data.D[idx] = entry;
-    }
-    
-    saveAll();
-    D.closeEntry();
-    toast('Entry Saved', 'success');
-  };
 
-  q('#deleteBtn').onclick = () => {
-    if(confirm('Delete this entry?')){
-      data.D = data.D.filter(x=>x.id!==editingId);
-      saveAll();
-      D.closeEntry();
-      toast('Deleted', 'error');
-    }
-  };
-
-  // Quick Add
-  q('#qaSave').onclick = () => {
-    const title = q('#qaTitle').value.trim();
-    if(!title) return toast('Title required', 'error');
-    const entry = {
-      id: uuid(),
-      date: todayISO(),
-      title: title,
-      etype: q('#qaType').value,
-      tags: q('#qaTags').value.split(',').map(s=>s.trim()).filter(Boolean),
-      important: false,
-      body: '',
-      linkTaskId: null,
-      createdAt: nowISO(),
-      updatedAt: nowISO()
+    CT.diary.closeEntry = function(){
+      q('#modalDiary').style.display='none';
     };
-    data.D.push(entry);
-    saveAll();
-    q('#qaTitle').value = '';
-    q('#qaTags').value = '';
-    q('.qa-box').removeAttribute('open'); // Close accordion
-    toast('Quick Note Added', 'success');
-  };
 
-  // Filters
-  q('#search').oninput = renderList;
-  q('#typeFilter').onchange = renderList;
-  D.toggleImp = (btn) => {
-    showImpOnly = !showImpOnly;
-    btn.dataset.active = showImpOnly;
-    btn.style.background = showImpOnly ? 'var(--warn)' : 'var(--panel)';
-    btn.style.color = showImpOnly ? '#000' : 'var(--text)';
-    renderList();
-  };
+    q('#saveDiaryBtn').onclick = () => {
+      const title = q('#enTitle').value.trim();
+      const body = q('#enBody').value.trim();
+      if(!title && !body) return toast('Entry is empty','error');
 
-  // Prefill
-  q('#prefillFromTask').onclick = () => {
-    const tid = q('#enTaskLink').value;
-    if(!tid) return toast('Select a task first', 'error');
-    const t = data.T.find(x=>x.id===tid);
-    const c = data.C.find(x=>x.id===t.customerId);
-    
-    const txt = `\n\n--- Linked Task ---\nCustomer: ${c?c.name:'N/A'}\nDesc: ${t.description}\nStatus: ${t.status}`;
-    q('#enBody').value += txt;
-    D.autoGrow(q('#enBody'));
-    if(!q('#enTitle').value) q('#enTitle').value = `Update on ${c?c.name:'Task'}`;
-  };
-
-  // Import/Export
-  D.backupJSON = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `Backup_${todayISO()}.json`;
-    a.click();
-  };
-
-  D.importJSON = () => {
-    const inp = q('#jsonFile');
-    inp.onchange = (e) => {
-      const f = e.target.files[0];
-      if(!f) return;
-      const r = new FileReader();
-      r.onload = (res) => {
-        try {
-          const json = JSON.parse(res.target.result);
-          if(json.C) data.C = json.C;
-          if(json.T) data.T = json.T;
-          if(json.L) data.L = json.L;
-          if(json.D) data.D = json.D;
-          saveAll();
-          toast('Data Imported', 'success');
-        } catch(err) { toast('Invalid JSON', 'error'); }
+      const base = {
+        id: diaryEditingId || uuid(),
+        date: q('#enDate').value || todayISO(),
+        title,
+        body,
+        updatedAt: nowISO()
       };
-      r.readAsText(f);
+
+      if(!diaryEditingId){
+        base.createdAt = nowISO();
+        diary.push(base);
+      } else {
+        const idx = diary.findIndex(x=>x.id===diaryEditingId);
+        if (idx !== -1) {
+            base.createdAt = diary[idx].createdAt;
+            diary[idx] = base;
+        }
+      }
+      save();
+      CT.diary.closeEntry();
+      toast('Entry Saved','success');
     };
-    inp.click();
-  };
 
-  D.exportCSV = () => {
-    const h = ["ID","Date","Title","Type","Body","Tags"];
-    const rows = data.D.map(e => [
-      e.id, e.date, `"${(e.title||'').replace(/"/g,'""')}"`, e.etype, `"${(e.body||'').replace(/\n/g,' ')}"`, `"${(e.tags||[]).join(',')}"`
-    ]);
-    const csv = [h.join(',')].concat(rows.map(r=>r.join(','))).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `Diary_${todayISO()}.csv`;
-    a.click();
-  };
-  
-  // TXT Logic
-  function entryToTxt(e){
-    return `DATE: ${e.date}\nTITLE: ${e.title} [${e.etype}]\nTAGS: ${(e.tags||[]).join(', ')}\n----------------\n${e.body||''}\n\n`;
-  }
+    q('#deleteDiaryBtn').onclick = () => {
+      if(!diaryEditingId) return;
+      if(!confirm('Delete this entry?')) return;
+      diary = diary.filter(x=>x.id!==diaryEditingId);
+      save();
+      CT.diary.closeEntry();
+      toast('Entry Deleted','error');
+    };
 
-  D.exportTXT = (mode) => {
-    let pool = data.D.slice().sort((a,b)=> (a.date||"").localeCompare(b.date||""));
-    if(mode !== 'all') pool = pool.filter(e => e.etype === mode);
+    function diaryEntryToTxt(e){
+      return `DATE: ${e.date}\nTITLE: ${e.title || '(No Title)'}\n----------------\n${e.body||''}\n\n`;
+    }
+
+    q('#shareDiaryBtn').onclick = () => {
+      const e = diary.find(x=>x.id===diaryEditingId);
+      if(!e) return;
+      const blob = new Blob([diaryEntryToTxt(e)], {type:'text/plain'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${(e.title||'entry').replace(/[^a-z0-9]/gi,'_')}.txt`;
+      a.click();
+      toast('Entry exported as TXT','success');
+    };
+
+    q('#emailDiaryBtn').onclick = () => {
+      const e = diary.find(x=>x.id===diaryEditingId);
+      const subject = `Diary Entry: ${e ? e.title : 'New Entry'}`;
+      const body = e ? diaryEntryToTxt(e) : '';
+      window.location.href = `mailto:${EMAIL_TARGET_DIARY}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      toast('Email draft opened','info');
+    };
+
+    /* ========================================================= */
+    /* --- NOTES MODULE --- */
+    /* ========================================================= */
+    CT.notes = {};
+
+    CT.notes.renderList = function(){
+      const list = q('#noteList'); list.innerHTML = '';
+      let pool = notes.slice().sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      
+      if(!pool.length){
+        list.innerHTML = `<div class="muted" style="text-align:center; padding:20px">No temporary notes.</div>`;
+        return;
+      }
+
+      pool.forEach(n => {
+        const div = document.createElement('div'); div.className = 'note-entry';
+        const dateStr = new Date(n.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' - ' + new Date(n.createdAt).toLocaleDateString();
+        div.innerHTML = `
+          <div class="muted" style="font-size:11px; margin-bottom:4px; display:flex; justify-content:space-between">
+            <span>${dateStr}</span>
+            <button class="btn secondary sm icon" onclick="CT.notes.openNote('${n.id}')" style="padding:4px">✏️</button>
+          </div>
+          <div onclick="CT.notes.openNote('${n.id}')" style="cursor:pointer; white-space:pre-wrap;">${n.body}</div>
+        `;
+        list.appendChild(div);
+      });
+    };
+
+    CT.notes.openNote = function(id=null){
+      noteEditingId = id;
+      q('#nBody').value = '';
+      q('#deleteNoteBtn').classList.add('hidden');
+      if(id){
+        const n = notes.find(x=>x.id===id);
+        q('#modalNoteTitle').textContent = "Edit Note";
+        q('#nBody').value = n.body || '';
+        q('#deleteNoteBtn').classList.remove('hidden');
+      } else {
+        q('#modalNoteTitle').textContent = "New Note";
+      }
+      CT.autoGrow(q('#nBody'));
+      q('#modalNote').style.display='flex';
+    };
+
+    q('#saveNoteBtn').onclick = () => {
+      const body = q('#nBody').value.trim();
+      if(!body) return toast('Note cannot be empty','error');
+      
+      const newNote = {
+        id: noteEditingId || uuid(),
+        body: body,
+        createdAt: nowISO(),
+      };
+
+      if(noteEditingId){
+        const idx = notes.findIndex(x=>x.id===noteEditingId);
+        if (idx !== -1) {
+            notes[idx] = {...notes[idx], body: body, createdAt: notes[idx].createdAt};
+        }
+      } else {
+        notes.push(newNote);
+      }
+      
+      save(); closeModals(); toast('Note Saved','success');
+    };
+
+    q('#deleteNoteBtn').onclick = () => {
+      if(!noteEditingId) return;
+      if(!confirm('Delete this temporary note?')) return;
+      notes = notes.filter(n=>n.id!==noteEditingId);
+      save(); closeModals(); toast('Note Deleted','error');
+    };
     
-    const txt = pool.map(entryToTxt).join('================================\n');
-    const blob = new Blob([txt], {type:'text/plain'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `Diary_${mode}_${todayISO()}.txt`;
-    a.click();
-  };
+    q('#emailNoteBtn').onclick = () => {
+      const body = q('#nBody').value.trim();
+      if(!body) return toast('Note is empty','error');
+      const subject = "Temporary Note from App";
+      window.location.href = `mailto:${EMAIL_TARGET_NOTES}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      toast('Email draft opened','info');
+    };
+    
+    /* ========================================================= */
+    /* --- BOT GENERATOR MODULE --- */
+    /* ========================================================= */
+    function renderBotHist(){
+      const list = q('#botHistoryList'); list.innerHTML = '';
+      if(!botHist.length){
+        list.innerHTML = `<div class="muted" style="text-align:center; padding:20px">No history. Tap + to add.</div>`;
+        return;
+      }
 
-  // Individual Share
-  q('#shareBtn').onclick = () => {
-    const e = data.D.find(x=>x.id===editingId);
-    if(!e) return;
-    const blob = new Blob([entryToTxt(e)], {type:'text/plain'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${e.title.replace(/[^a-z0-9]/gi,'_')}.txt`;
-    a.click();
-  };
+      const grouped = {};
+      botHist.forEach(i => { if(!grouped[i.date]) grouped[i.date]=[]; grouped[i.date].push(i); });
+      
+      Object.keys(grouped).sort().forEach(date => {
+        const items = grouped[date];
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <div class="hist-group-header" onclick="this.parentElement.classList.toggle('expanded')">
+            <span>📅 ${date} <span class="muted">(${items.length})</span></span>
+            <div class="inline">
+              <button class="btn secondary sm" onclick="event.stopPropagation(); promptSmartDel('${date}')">🗑️</button>
+            </div>
+          </div>
+          <div class="hist-content">
+            ${items.map(i => `
+              <div class="row" style="padding:8px 0">
+                <div class="muted" style="font-family:monospace; min-width:50px; font-weight:bold; color:var(--accent)">${i.time}</div>
+                <div class="grow muted">${i.msg}</div>
+                <button class="btn secondary sm" onclick="reuseBot('${i.id}')">🔄</button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
 
-  // Email
-  q('#emailBtn').onclick = () => {
-    const e = data.D.find(x=>x.id===editingId);
-    const to = (e && e.etype === 'personal') ? EMAIL_PERSONAL : EMAIL_PRO;
-    const subject = `Diary: ${e ? e.title : 'New Entry'}`;
-    const body = e ? entryToTxt(e) : '';
-    window.location.href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
+    function openBotModal(){ 
+      q('#bDate').value=new Date().toISOString().split('T')[0]; 
+      q('#bTime').value='10:00'; q('#bMsg').value=''; 
+      q('#botOutput').classList.add('hidden'); 
+      q('#modalBot').style.display='flex'; 
+    }
+    window.openBotModal = openBotModal;
 
-  // Close menu when clicking outside
-  document.addEventListener('click', (e) => {
-    if(!e.target.closest('.menu-wrap')) q('#mainMenu').classList.remove('open');
-  });
+    CT.bot = {
+      smartTime: (h,m) => { q('#bTime').value = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; },
+      addDays: (d) => { 
+        const curVal = q('#bDate').value || new Date().toISOString().split('T')[0];
+        const cur = new Date(curVal); 
+        cur.setDate(cur.getDate()+d); 
+        q('#bDate').value = cur.toISOString().split('T')[0]; 
+      }
+    };
 
-  loadAll();
+    q('#btnGenBot').onclick = () => {
+      const d = q('#bDate').value; const t = q('#bTime').value; const m = q('#bMsg').value;
+      if(!d || !t) return toast('Date/Time required','error');
+      
+      const cleanStr = `remind ${d} ${t} ${m}`;
+      const botCmd = `!remind ${d} ${t} ${m}`;
+      
+      const out = q('#botOutput');
+      out.innerHTML = '';
+      out.classList.remove('hidden');
 
-})();
-</script>
+      const createRow = (txt) => {
+        const d = document.createElement('div');
+        d.style.cssText = 'background:var(--bg); padding:10px; border-radius:8px; display:flex; align-items:center; gap:10px; font-family:monospace; font-size:12px; border:1px solid var(--border)';
+        d.innerHTML = `
+          <div style="flex:1; word-break:break-all">${txt}</div>
+          <button class="btn secondary sm" onclick="copyText('${txt.replace(/'/g, "\\'")}')">📋</button>
+        `;
+        return d;
+      };
+
+      out.appendChild(createRow(botCmd));
+      out.appendChild(createRow(cleanStr));
+      
+      if(!botHist.find(x => x.date===d && x.time===t && x.msg===m)){
+        botHist.push({id:uuid(), date:d, time:t, msg:m, clean:cleanStr});
+        save();
+      }
+      toast('Commands Generated','success');
+    };
+
+    q('#btnResetBot').onclick = () => {
+      q('#bDate').value=new Date().toISOString().split('T')[0]; 
+      q('#bTime').value='10:00'; 
+      q('#bMsg').value='';
+      q('#botOutput').classList.add('hidden');
+    };
+
+    window.reuseBot = (id) => {
+      const i = botHist.find(x=>x.id===id);
+      if(i) { 
+        q('#bDate').value=i.date; 
+        q('#bTime').value=i.time; 
+        q('#bMsg').value=i.msg; 
+        q('#botOutput').classList.add('hidden');
+        q('#modalBot').style.display='flex'; 
+      }
+    };
+
+    window.promptSmartDel = (date) => { 
+      delTargetDate = date; 
+      q('#sdDate').innerText = date; 
+      q('#modalSmartDel').style.display='flex'; 
+    };
+
+    q('#btnJustDel').onclick = () => { 
+      botHist=botHist.filter(i=>i.date!==delTargetDate); 
+      save(); closeModals(); 
+      toast('Deleted','success');
+    };
+
+    q('#btnEmailDel').onclick = () => {
+      const items = botHist.filter(i=>i.date===delTargetDate);
+      const body = items.map(i => i.clean).join('\n');
+      window.location.href = `mailto:${EMAIL_TARGET_BOT}?subject=Schedule ${delTargetDate}&body=${encodeURIComponent(body)}`;
+      setTimeout(()=>{ 
+        botHist=botHist.filter(i=>i.date!==delTargetDate); 
+        save(); closeModals(); 
+      }, 2000);
+    };
+    
+    // Initial render sets the default view (Diary)
+    render();
+  </script>
 </body>
 </html>
